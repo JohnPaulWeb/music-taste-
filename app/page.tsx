@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { Disc3, Eye, EyeOff, Headphones, Mail, Music2, UserRound } from 'lucide-react'
 import MusicPlayer from '@/components/music-player'
+import { getSupabase } from '@/lib/supabase'
 
 type Mode = 'login' | 'signup'
 
@@ -11,27 +12,26 @@ interface Account {
   email: string
 }
 
-const storageKey = 'echora-account'
-
 export default function Home() {
   const [account, setAccount] = useState<Account | null>(null)
   const [mode, setMode] = useState<Mode>('signup')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState('')
 
   useEffect(() => {
-    const savedAccount = window.localStorage.getItem(storageKey)
-    if (savedAccount) {
-      try {
-        setAccount(JSON.parse(savedAccount) as Account)
-      } catch {
-        window.localStorage.removeItem(storageKey)
-      }
-    }
+    const supabase = getSupabase()
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) setAccount({ name: String(user.user_metadata.name ?? user.email.split('@')[0]), email: user.email })
+    })
   }, [])
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setError('')
+    setMessage('')
     const form = new FormData(event.currentTarget)
     const name = String(form.get('name') ?? '').trim()
     const email = String(form.get('email') ?? '').trim()
@@ -50,14 +50,60 @@ export default function Home() {
       return
     }
 
-    const nextAccount = { name: mode === 'signup' ? name : email.split('@')[0], email }
-    window.localStorage.setItem(storageKey, JSON.stringify(nextAccount))
-    setAccount(nextAccount)
+    setIsSubmitting(true)
+    try {
+      const supabase = getSupabase()
+      if (mode === 'signup') {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { name },
+            emailRedirectTo: window.location.origin,
+          },
+        })
+        if (signUpError) throw signUpError
+
+        if (data.session) {
+          setAccount({ name, email })
+        } else {
+          setPendingConfirmationEmail(email)
+          setMessage('Check your inbox to confirm your email address, then log in.')
+        }
+      } else {
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+        if (signInError) throw signInError
+        setAccount({ name: String(data.user.user_metadata.name ?? email.split('@')[0]), email })
+      }
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : 'Unable to complete your request. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  if (account) {
-    return <MusicPlayer user={account} onLogout={() => { window.localStorage.removeItem(storageKey); setAccount(null) }} />
+  const resendConfirmation = async () => {
+    if (!pendingConfirmationEmail) return
+
+    setError('')
+    setMessage('')
+    setIsSubmitting(true)
+    try {
+      const { error: resendError } = await getSupabase().auth.resend({
+        type: 'signup',
+        email: pendingConfirmationEmail,
+        options: { emailRedirectTo: window.location.origin },
+      })
+      if (resendError) throw resendError
+      setMessage('A new confirmation email has been sent. Check spam or junk mail too.')
+    } catch (resendFailure) {
+      setError(resendFailure instanceof Error ? resendFailure.message : 'Unable to resend the confirmation email.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
+
+  if (account) return <MusicPlayer user={account} onLogout={async () => { await getSupabase().auth.signOut(); setAccount(null) }} />
 
   return (
     <main className="min-h-screen bg-[#121212] text-white lg:grid lg:grid-cols-2">
@@ -84,11 +130,14 @@ export default function Home() {
             <label className="block"><span className="mb-2 block text-sm font-bold">Email address</span><div className="relative"><Mail className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-zinc-500" /><input name="email" type="email" required autoComplete="email" placeholder="name@example.com" className="h-12 w-full rounded-md border border-zinc-600 bg-[#242424] pl-12 pr-4 outline-none transition placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white" /></div></label>
             <label className="block"><span className="mb-2 block text-sm font-bold">Password</span><div className="relative"><input name="password" type={showPassword ? 'text' : 'password'} required minLength={6} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} placeholder="At least 6 characters" className="h-12 w-full rounded-md border border-zinc-600 bg-[#242424] px-4 pr-12 outline-none transition placeholder:text-zinc-500 focus:border-white focus:ring-1 focus:ring-white" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-3 text-zinc-400 hover:text-white">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button></div></label>
             {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-            <button className="mt-2 h-12 w-full rounded-full bg-[#1db954] font-bold text-black transition hover:scale-[1.02] hover:bg-[#1ed760]">{mode === 'signup' ? 'Sign up' : 'Log in'}</button>
+            {message && <p role="status" className="text-sm text-[#1db954]">{message}</p>}
+            {pendingConfirmationEmail && <button type="button" onClick={resendConfirmation} disabled={isSubmitting} className="text-sm font-semibold text-[#1db954] hover:text-[#1ed760] disabled:cursor-not-allowed disabled:opacity-60">Resend confirmation email to {pendingConfirmationEmail}</button>}
+            <button disabled={isSubmitting} className="mt-2 h-12 w-full rounded-full bg-[#1db954] font-bold text-black transition hover:scale-[1.02] hover:bg-[#1ed760] disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Please wait...' : mode === 'signup' ? 'Sign up' : 'Log in'}</button>
           </form>
           <div className="my-8 flex items-center gap-3 text-xs text-zinc-500 before:h-px before:flex-1 before:bg-zinc-700 after:h-px after:flex-1 after:bg-zinc-700">OR</div>
-          <button type="button" onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError('') }} className="w-full rounded-full border border-zinc-500 px-6 py-3 text-sm font-bold transition hover:border-white hover:scale-[1.02]">{mode === 'signup' ? 'Log in to your account' : 'Sign up for Echora'}</button>
-          <p className="mt-8 text-center text-xs leading-5 text-zinc-500">This demo stores only your display name and email in this browser. It does not create a server account.</p>
+          <button type="button" onClick={() => setAccount({ name: 'Guest listener', email: 'guest@echora.local' })} className="w-full rounded-full border border-[#1db954] px-6 py-3 text-sm font-bold text-[#1db954] transition hover:scale-[1.02] hover:bg-[#1db954] hover:text-black">Continue as guest</button>
+          <button type="button" onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(''); setMessage('') }} className="w-full rounded-full border border-zinc-500 px-6 py-3 text-sm font-bold transition hover:border-white hover:scale-[1.02]">{mode === 'signup' ? 'Log in to your account' : 'Sign up for Echora'}</button>
+          <p className="mt-8 text-center text-xs leading-5 text-zinc-500">Accounts are secured by Supabase. New members must confirm their email before logging in.</p>
         </div>
       </section>
     </main>
