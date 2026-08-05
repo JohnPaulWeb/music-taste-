@@ -109,6 +109,7 @@ export default function MusicPlayer({
   const [activeView, setActiveView] = useState<"home" | "explore" | "library" | "playlist">(
     "home",
   );
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const track = externalTrack ?? queue[index] ?? tracks[0];
 
@@ -290,13 +291,22 @@ export default function MusicPlayer({
   const progress = duration ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="flex min-h-screen bg-[#090a0b] text-foreground">
-      <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-[#101112] p-4 md:flex md:flex-col">
-        <div className="flex items-center gap-2 px-3 pt-2 text-2xl font-black tracking-tight">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#1db954] text-black">
-            <ListMusic className="h-5 w-5" />
-          </span>
-          echora
+    <div className="flex min-h-screen bg-gradient-to-b from-[#070708] to-[#090a0b] text-foreground">
+      <aside className={`hidden md:flex md:flex-col shrink-0 border-r border-white/10 bg-[#0f1111] p-4 transition-all duration-200 ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
+        <div className="flex items-center justify-between gap-2 px-3 pt-2">
+          <div className="flex items-center gap-2 text-lg font-black tracking-tight">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#1db954] text-black">
+              <ListMusic className="h-5 w-5" />
+            </span>
+            {!sidebarCollapsed && <span className="ml-1">echora</span>}
+          </div>
+          <button
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            aria-label="Toggle sidebar"
+            className="rounded p-1 text-muted-foreground hover:bg-white/5"
+          >
+            {sidebarCollapsed ? '▶' : '◀'}
+          </button>
         </div>
         <nav className="mt-10 space-y-1.5 text-sm">
           <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -313,10 +323,10 @@ export default function MusicPlayer({
             <button
               key={view}
               onClick={() => setActiveView(view)}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition ${activeView === view ? "bg-[#1db954] text-black shadow-lg shadow-[#1db954]/15" : "text-muted-foreground hover:bg-white/[0.05] hover:text-white"}`}
+              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition w-full ${activeView === view ? "bg-[#1db954] text-black shadow-lg shadow-[#1db954]/15" : "text-muted-foreground hover:bg-white/[0.05] hover:text-white"}`}
             >
               <Icon className="h-4 w-4" />
-              {label}
+              {!sidebarCollapsed && <span>{label}</span>}
             </button>
           ))}
         </nav>
@@ -406,12 +416,12 @@ export default function MusicPlayer({
                   world.
                 </p>
               )}
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {results.map((result) => (
                 <button
                   key={result.id}
                   onClick={() => playSearchResult(result)}
-                  className="flex min-w-0 items-center gap-3 rounded-lg bg-secondary/60 p-2 text-left hover:bg-secondary"
+                  className="flex min-w-0 items-center gap-3 rounded-lg bg-white/[0.02] p-3 text-left hover:bg-white/[0.04] shadow-sm"
                 >
                   <img
                     src={result.cover}
@@ -455,7 +465,7 @@ export default function MusicPlayer({
                 playlist.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3"
+                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3 hover:bg-white/[0.04] shadow-sm"
                   >
                     <button
                       onClick={() => playSearchResult(item)}
@@ -534,7 +544,7 @@ export default function MusicPlayer({
             <section className="min-h-[380px] lg:col-span-1">
               <VinylVisualizer currentTrack={track} isPlaying={isPlaying} />
             </section>
-            <section className="rounded-3xl border border-white/10 bg-[#121313] p-5 lg:col-span-1">
+            <section className="rounded-3xl border border-white/10 bg-[#0f1111] p-5 lg:col-span-1">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
@@ -559,7 +569,7 @@ export default function MusicPlayer({
                   {queue.map((item, itemIndex) => (
                     <div
                       key={item.id}
-                      className={`flex items-center gap-2 rounded-xl p-2 transition ${!externalTrack && itemIndex === index ? "bg-[#1db954]/15 ring-1 ring-[#1db954]/50" : "hover:bg-white/[0.05]"}`}
+                      className={`flex items-center gap-2 rounded-xl p-2 transition ${!externalTrack && itemIndex === index ? "bg-[#1db954]/12 ring-1 ring-[#1db954]/50 shadow-md" : "hover:bg-white/[0.03]"}`}
                     >
                       <button
                         onClick={() => changeTrack(itemIndex)}
@@ -635,7 +645,7 @@ export default function MusicPlayer({
                 playlist.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2"
+                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-2 hover:bg-white/[0.04] shadow-sm"
                   >
                     <button
                       onClick={() => playSearchResult(item)}
