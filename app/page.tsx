@@ -8,6 +8,7 @@ import {
   Eye,
   EyeOff,
   Headphones,
+  Lock,
   Mail,
   Music2,
   Sparkles,
@@ -194,96 +195,105 @@ export default function Home() {
     );
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#090a0b] text-white lg:grid lg:grid-cols-[1.05fr_0.95fr]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(29,185,84,0.12),transparent_26%),radial-gradient(circle_at_20%_90%,rgba(43,78,255,0.10),transparent_30%)]" />
+    <main className="relative flex min-h-screen overflow-x-hidden bg-[#07080a] text-white lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+      {/* Background ambient lighting */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(29,185,84,0.15),transparent_40%),radial-gradient(circle_at_20%_80%,rgba(16,185,129,0.12),transparent_40%)]" />
 
+      {/* Left Branding Showcase */}
+      <section className="relative hidden overflow-hidden border-r border-white/10 bg-gradient-to-br from-[#1db954]/20 via-[#0e2417] to-[#07080a] p-12 lg:flex lg:flex-col lg:justify-between">
+        <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-[#1db954]/20 blur-3xl" />
+        <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-black/50 blur-3xl" />
+        
+        {/* Animated Vinyl Disc Art Graphic */}
+        <div className="absolute right-12 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full border-[24px] border-black/40 shadow-[0_0_80px_rgba(29,185,84,0.2)] animate-spin-slow">
+          <div className="absolute inset-4 rounded-full border border-white/10" />
+          <div className="absolute inset-12 rounded-full border border-white/10" />
+          <div className="absolute inset-20 rounded-full bg-gradient-to-tr from-[#1db954] to-[#10b981] shadow-lg" />
+        </div>
 
-      <section className="relative hidden overflow-hidden border-r border-white/10 bg-gradient-to-br from-[#1db954] via-[#12813b] to-[#062814] p-10 lg:flex lg:flex-col lg:justify-between xl:p-12">
-        <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#d6ff6e]/25 blur-3xl" />
-        <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-black/30 blur-3xl" />
-        <div className="absolute right-16 top-1/2 h-72 w-72 -translate-y-1/2 rounded-full border-[18px] border-black/20 shadow-[0_0_0_20px_rgba(255,255,255,0.06),0_40px_100px_rgba(0,0,0,0.35)]" />
-        <div className="absolute right-[9.5rem] top-1/2 h-7 w-7 -translate-y-1/2 rounded-full bg-[#d6ff6e] shadow-[0_0_0_8px_rgba(0,0,0,0.2)]" />
-        <div className="relative flex items-center gap-2 text-2xl font-black tracking-tight">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-black/15">
-            <Disc3 className="h-6 w-6" />
+        <div className="relative flex items-center gap-3 text-3xl font-black tracking-tight">
+          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-tr from-[#1db954] to-[#10b981] text-black shadow-lg shadow-[#1db954]/30">
+            <Disc3 className="h-7 w-7 animate-spin-slow" />
           </span>{" "}
           echora
         </div>
-        <div className="relative max-w-lg">
-          <p className="mb-5 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-white/75">
-            <Sparkles className="h-4 w-4" /> Your sound, your space
-          </p>
-          <h1 className="text-6xl font-black leading-[0.92] tracking-tight">
+
+        <div className="relative max-w-lg space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#1db954]/30 bg-[#1db954]/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-[#75e8a0]">
+            <Sparkles className="h-4 w-4" /> Next-Gen Audio Experience
+          </div>
+          <h1 className="text-6xl font-black leading-tight tracking-tight">
             Feel every
             <br />
-            moment.
+            rhythm & beat.
           </h1>
-          <p className="mt-6 max-w-md text-lg leading-7 text-white/80">
-            Discover your next favorite track, build playlists, and keep the
-            music moving.
+          <p className="text-lg leading-relaxed text-zinc-300">
+            Discover curated playlists, explore music worldwide, and experience high-fidelity vinyl visualization.
           </p>
         </div>
-        <div className="relative flex gap-3 text-sm font-semibold text-white/90">
-          <span className="flex items-center gap-2 rounded-full border border-white/20 bg-black/10 px-4 py-2">
-            <Music2 className="h-4 w-4" /> Curated picks
+
+        <div className="relative flex flex-wrap gap-4 text-sm font-semibold text-zinc-300">
+          <span className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/40 px-4 py-2.5 backdrop-blur-md">
+            <Music2 className="h-4 w-4 text-[#1db954]" /> Hi-Res Previews
           </span>
-          <span className="flex items-center gap-2 rounded-full border border-white/20 bg-black/10 px-4 py-2">
-            <Headphones className="h-4 w-4" /> Listen anywhere
+          <span className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/40 px-4 py-2.5 backdrop-blur-md">
+            <Headphones className="h-4 w-4 text-[#1db954]" /> Custom Turntable
           </span>
         </div>
       </section>
 
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-3">
-        <div className="w-full max-w-[29rem] rounded-3xl border border-white/10 bg-[#151617]/85 p-5 shadow-2xl shadow-black/40 backdrop-blur-xl sm:max-w-[31rem] sm:p-8 lg:max-w-[27rem] lg:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-6 lg:mb-4">
-            <div className="flex items-center gap-2 text-xl font-black sm:text-2xl">
+      {/* Right Form Card */}
+      <section className="relative flex min-h-screen items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d0e12]/90 p-8 shadow-2xl backdrop-blur-2xl">
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-2xl font-black">
               <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#1db954] text-black">
                 <Disc3 className="h-6 w-6" />
               </span>{" "}
               echora
             </div>
             <span className="rounded-full border border-[#1db954]/30 bg-[#1db954]/10 px-3 py-1 text-xs font-bold text-[#75e8a0]">
-              Free to explore
+              Free Access
             </span>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-[1.9rem]">
-            {mode === "signup" ? "Your next song is waiting." : "Welcome back."}
+
+          <h2 className="text-3xl font-black tracking-tight text-white">
+            {mode === "signup" ? "Get started today." : "Welcome back."}
           </h2>
-          <p className="mt-3 text-sm leading-6 text-zinc-400 sm:text-[15px]">
+          <p className="mt-2 text-sm text-zinc-400">
             {mode === "signup"
-              ? "Create your space, discover new sounds, and start listening."
-              : "Log in to pick up right where you left off."}
+              ? "Create your account or join instantly as guest listener."
+              : "Log in to access your queue and playlists."}
           </p>
 
-          <form onSubmit={submit} className="mt-5 space-y-3 sm:mt-6 sm:space-y-4 lg:mt-4 lg:space-y-2.5">
+          <form onSubmit={submit} className="mt-6 space-y-4">
             {mode === "signup" && (
-              <label className="block">
-                <span className="mb-2 block text-sm font-bold">Name</span>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Name</span>
                 <div className="relative">
                   <UserRound className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-zinc-500" />
                   <input
                     name="name"
                     required
                     autoComplete="name"
-                    placeholder="What should we call you?"
+                    placeholder="Your display name"
                     onChange={handleFieldChange}
                     aria-invalid={Boolean(validationErrors.name)}
-                    className={`h-12 w-full rounded-xl border pl-12 pr-4 outline-none transition placeholder:text-zinc-600 hover:border-white/20 focus:ring-4 ${
+                    className={`h-12 w-full rounded-xl border pl-12 pr-4 text-sm outline-none transition placeholder:text-zinc-600 ${
                       validationErrors.name
-                        ? "border-red-500/70 bg-red-500/10 focus:border-red-500 focus:ring-red-500/20"
-                        : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-[#1db954]/10"
+                        ? "border-red-500/70 bg-red-500/10 focus:ring-4 focus:ring-red-500/20"
+                        : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-4 focus:ring-[#1db954]/15"
                     }`}
                   />
                 </div>
                 {validationErrors.name && (
-                  <p className="mt-2 text-sm text-red-400">{validationErrors.name}</p>
+                  <p className="text-xs text-red-400">{validationErrors.name}</p>
                 )}
               </label>
             )}
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold">
-                Email address
-              </span>
+
+            <label className="block space-y-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Email Address</span>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-zinc-500" />
                 <input
@@ -294,20 +304,22 @@ export default function Home() {
                   placeholder="name@example.com"
                   onChange={handleFieldChange}
                   aria-invalid={Boolean(validationErrors.email)}
-                  className={`h-12 w-full rounded-xl border pl-12 pr-4 outline-none transition placeholder:text-zinc-600 hover:border-white/20 focus:ring-4 ${
+                  className={`h-12 w-full rounded-xl border pl-12 pr-4 text-sm outline-none transition placeholder:text-zinc-600 ${
                     validationErrors.email
-                      ? "border-red-500/70 bg-red-500/10 focus:border-red-500 focus:ring-red-500/20"
-                      : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-[#1db954]/10"
+                      ? "border-red-500/70 bg-red-500/10 focus:ring-4 focus:ring-red-500/20"
+                      : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-4 focus:ring-[#1db954]/15"
                   }`}
                 />
               </div>
               {validationErrors.email && (
-                <p className="mt-2 text-sm text-red-400">{validationErrors.email}</p>
+                <p className="text-xs text-red-400">{validationErrors.email}</p>
               )}
             </label>
-            <label className="block">
-              <span className="mb-2 block text-sm font-bold">Password</span>
+
+            <label className="block space-y-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Password</span>
               <div className="relative">
+                <Lock className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-zinc-500" />
                 <input
                   name="password"
                   type={showPassword ? "text" : "password"}
@@ -319,17 +331,17 @@ export default function Home() {
                   placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"}
                   onChange={handleFieldChange}
                   aria-invalid={Boolean(validationErrors.password)}
-                  className={`h-12 w-full rounded-xl border px-4 pr-12 outline-none transition placeholder:text-zinc-600 hover:border-white/20 focus:ring-4 ${
+                  className={`h-12 w-full rounded-xl border pl-12 pr-12 text-sm outline-none transition placeholder:text-zinc-600 ${
                     validationErrors.password
-                      ? "border-red-500/70 bg-red-500/10 focus:border-red-500 focus:ring-red-500/20"
-                      : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-[#1db954]/10"
+                      ? "border-red-500/70 bg-red-500/10 focus:ring-4 focus:ring-red-500/20"
+                      : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-4 focus:ring-[#1db954]/15"
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((visible) => !visible)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-3 text-zinc-400 transition hover:text-white"
+                  className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-white transition"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -339,13 +351,15 @@ export default function Home() {
                 </button>
               </div>
               {validationErrors.password && (
-                <p className="mt-2 text-sm text-red-400">{validationErrors.password}</p>
+                <p className="text-xs text-red-400">{validationErrors.password}</p>
               )}
             </label>
+
             {mode === "signup" && (
-              <label className="block">
-                <span className="mb-2 block text-sm font-bold">Confirm password</span>
+              <label className="block space-y-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Confirm Password</span>
                 <div className="relative">
+                  <Lock className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-zinc-500" />
                   <input
                     name="confirmPassword"
                     type={showPassword ? "text" : "password"}
@@ -354,72 +368,70 @@ export default function Home() {
                     placeholder="Re-enter your password"
                     onChange={handleFieldChange}
                     aria-invalid={Boolean(validationErrors.confirmPassword)}
-                    className={`h-12 w-full rounded-xl border px-4 pr-12 outline-none transition placeholder:text-zinc-600 hover:border-white/20 focus:ring-4 ${
+                    className={`h-12 w-full rounded-xl border pl-12 pr-4 text-sm outline-none transition placeholder:text-zinc-600 ${
                       validationErrors.confirmPassword
-                        ? "border-red-500/70 bg-red-500/10 focus:border-red-500 focus:ring-red-500/20"
-                        : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-[#1db954]/10"
+                        ? "border-red-500/70 bg-red-500/10 focus:ring-4 focus:ring-red-500/20"
+                        : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-4 focus:ring-[#1db954]/15"
                     }`}
                   />
                 </div>
                 {validationErrors.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-400">{validationErrors.confirmPassword}</p>
+                  <p className="text-xs text-red-400">{validationErrors.confirmPassword}</p>
                 )}
               </label>
             )}
-            {error && (
-              <p role="alert" className="text-sm text-red-400">
-                {error}
-              </p>
-            )}
-            {message && (
-              <p role="status" className="text-sm text-[#1db954]">
-                {message}
-              </p>
-            )}
+
+            {error && <p role="alert" className="text-xs font-medium text-red-400">{error}</p>}
+            {message && <p role="status" className="text-xs font-medium text-[#1db954]">{message}</p>}
+
             {pendingConfirmationEmail && (
               <button
                 type="button"
                 onClick={resendConfirmation}
                 disabled={isSubmitting}
-                className="text-sm font-semibold text-[#1db954] hover:text-[#1ed760] disabled:cursor-not-allowed disabled:opacity-60"
+                className="text-xs font-semibold text-[#1db954] hover:underline"
               >
                 Resend confirmation email to {pendingConfirmationEmail}
               </button>
             )}
+
             <button
               disabled={isSubmitting}
-              className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1db954] px-4 py-3 font-bold text-black shadow-lg shadow-[#1db954]/20 transition hover:-translate-y-0.5 hover:bg-[#58d979] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1db954] font-bold text-black shadow-lg shadow-[#1db954]/20 transition hover:scale-[1.02] hover:bg-[#58d979] disabled:opacity-60"
             >
               {isSubmitting ? (
-                "Please wait..."
+                "Processing..."
               ) : mode === "signup" ? (
                 <>
-                  Create free account <ArrowRight className="h-4 w-4" />
+                  Create Account <ArrowRight className="h-4 w-4" />
                 </>
               ) : (
                 <>
-                  Log in <ArrowRight className="h-4 w-4" />
+                  Log In <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </button>
           </form>
-          <div className="my-5 flex items-center gap-3 text-[11px] font-bold tracking-[0.16em] text-zinc-600 before:h-px before:flex-1 before:bg-white/10 after:h-px after:flex-1 after:bg-white/10 lg:my-4">
-            OR
+
+          <div className="my-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-zinc-600 before:h-px before:flex-1 before:bg-white/10 after:h-px after:flex-1 after:bg-white/10">
+            Or
           </div>
+
           <button
             type="button"
             onClick={() =>
               setAccount({
-                name: "Guest listener",
+                name: "Guest Listener",
                 email: "guest@echora.local",
               })
             }
-            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] px-6 py-3 text-sm font-bold text-white transition hover:border-[#1db954]/70 hover:bg-[#1db954]/10"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-bold text-white hover:border-[#1db954]/50 hover:bg-[#1db954]/10 transition"
           >
-            <Headphones className="h-4 w-4 text-[#1db954]" /> Continue as guest
+            <Headphones className="h-4 w-4 text-[#1db954]" /> Continue as Guest
           </button>
-          <p className="mt-4 text-center text-sm text-zinc-400 lg:mt-3">
-            {mode === "signup" ? "Already have an account?" : "New to Echora?"}{" "}
+
+          <p className="mt-5 text-center text-xs text-zinc-400">
+            {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               type="button"
               onClick={() => {
@@ -428,14 +440,14 @@ export default function Home() {
                 setMessage("");
                 setValidationErrors({});
               }}
-              className="font-bold text-[#58d979] transition hover:text-white"
+              className="font-bold text-[#75e8a0] hover:underline"
             >
               {mode === "signup" ? "Log in" : "Sign up free"}
             </button>
           </p>
-          <p className="mt-5 flex items-center justify-center gap-2 text-center text-xs leading-5 text-zinc-600 lg:mt-4">
-            <Check className="h-3.5 w-3.5 text-[#1db954]" /> Secure accounts.
-            Confirm email to get started.
+
+          <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-zinc-500">
+            <Check className="h-3.5 w-3.5 text-[#1db954]" /> Instant listening access. No setup required.
           </p>
         </div>
       </section>

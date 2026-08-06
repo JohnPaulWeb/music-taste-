@@ -2,21 +2,42 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
+  Camera,
   Check,
+  ChevronDown,
+  ChevronRight,
+  Clock,
   Compass,
+  Disc3,
   Heart,
   Home,
+  Image as ImageIcon,
   Library,
   ListMusic,
   LogOut,
+  Menu,
+  Music,
+  Music2,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pause,
   Play,
   Plus,
+  Radio,
+  Repeat,
   Search,
+  Settings,
+  Shuffle,
   SkipBack,
   SkipForward,
+  Sliders,
+  SlidersHorizontal,
+  Sparkles,
   Trash2,
+  TrendingUp,
+  User,
   Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import VinylVisualizer from "./vinyl-visualizer";
@@ -28,8 +49,9 @@ interface Track {
   album: string;
   cover: string;
   audio: string;
+  durationSeconds?: number;
 }
-interface User {
+interface UserAccount {
   name: string;
   email: string;
 }
@@ -42,7 +64,7 @@ interface ITunesSong {
   previewUrl?: string;
 }
 
-const tracks: Track[] = [
+const defaultTracks: Track[] = [
   {
     id: 1,
     title: "Neon Horizon",
@@ -51,6 +73,7 @@ const tracks: Track[] = [
     cover:
       "https://images.unsplash.com/photo-1611339555312-e607c4352fd7?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    durationSeconds: 372,
   },
   {
     id: 2,
@@ -60,6 +83,7 @@ const tracks: Track[] = [
     cover:
       "https://images.unsplash.com/photo-1614613535308-eb5fbd8f2c91?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    durationSeconds: 423,
   },
   {
     id: 3,
@@ -69,6 +93,7 @@ const tracks: Track[] = [
     cover:
       "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    durationSeconds: 345,
   },
   {
     id: 4,
@@ -78,6 +103,34 @@ const tracks: Track[] = [
     cover:
       "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+    durationSeconds: 310,
+  },
+];
+
+const PRESET_AVATARS = [
+  {
+    name: "Vinyl Glow",
+    url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&h=200&fit=crop",
+  },
+  {
+    name: "Headphones Studio",
+    url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop",
+  },
+  {
+    name: "DJ Lights",
+    url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&h=200&fit=crop",
+  },
+  {
+    name: "Cyberpunk Beats",
+    url: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=200&h=200&fit=crop",
+  },
+  {
+    name: "Guitar Acoustic",
+    url: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=200&h=200&fit=crop",
+  },
+  {
+    name: "Concert Stage",
+    url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200&h=200&fit=crop",
   },
 ];
 
@@ -85,105 +138,220 @@ export default function MusicPlayer({
   user,
   onLogout,
 }: {
-  user: User;
+  user: UserAccount;
   onLogout: () => void;
 }) {
   const [index, setIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(70);
+  const [volume, setVolume] = useState(75);
+  const [prevVolume, setPrevVolume] = useState(75);
+  const [isMuted, setIsMuted] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [isRepeat, setIsRepeat] = useState(false);
   const [error, setError] = useState("");
+
+  // Profile & Custom Avatar State
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [customUrlInput, setCustomUrlInput] = useState<string>("");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // Settings State
+  const [audioQuality, setAudioQuality] = useState("320kbps");
+  const [eqPreset, setEqPreset] = useState("Bass Boost");
+  const [autoplayNext, setAutoplayNext] = useState(true);
+  const [settingsSavedMessage, setSettingsSavedMessage] = useState("");
+
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [externalTrack, setExternalTrack] = useState<Track | null>(null);
-  const [queue, setQueue] = useState<Track[]>(tracks);
+
+  const [queue, setQueue] = useState<Track[]>(defaultTracks);
   const [playlist, setPlaylist] = useState<Track[]>([]);
   const [playlistReady, setPlaylistReady] = useState(false);
-  const [showPlaylist, setShowPlaylist] = useState(false);
   const [history, setHistory] = useState<Track[]>([]);
   const [historyReady, setHistoryReady] = useState(false);
   const [activeView, setActiveView] = useState<"home" | "explore" | "library" | "playlist">(
-    "home",
+    "home"
   );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const track = externalTrack ?? queue[index] ?? tracks[0];
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  const track = externalTrack ?? queue[index] ?? defaultTracks[0];
+
+  // Load avatar & settings from localStorage
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(
-        `echora-playlist-${user.email}`,
+      const savedAvatar = window.localStorage.getItem(`echora-avatar-${user.email}`);
+      if (savedAvatar) setAvatarUrl(savedAvatar);
+      const savedSettings = window.localStorage.getItem(`echora-settings-${user.email}`);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.audioQuality) setAudioQuality(parsed.audioQuality);
+        if (parsed.eqPreset) setEqPreset(parsed.eqPreset);
+        if (typeof parsed.autoplayNext === "boolean") setAutoplayNext(parsed.autoplayNext);
+      }
+    } catch {
+      // fallback defaults
+    }
+  }, [user.email]);
+
+  // Click outside to close dropdown menu
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(e.target as Node)
+      ) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Save Avatar logic
+  const handleSelectAvatar = (url: string) => {
+    setAvatarUrl(url);
+    try {
+      window.localStorage.setItem(`echora-avatar-${user.email}`, url);
+    } catch {
+      // ignore
+    }
+    setShowAvatarModal(false);
+  };
+
+  const handleCustomAvatarSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!customUrlInput.trim()) return;
+    handleSelectAvatar(customUrlInput.trim());
+    setCustomUrlInput("");
+  };
+
+  // Save Settings logic
+  const handleSaveSettings = () => {
+    try {
+      window.localStorage.setItem(
+        `echora-settings-${user.email}`,
+        JSON.stringify({ audioQuality, eqPreset, autoplayNext })
       );
+    } catch {
+      // ignore
+    }
+    setSettingsSavedMessage("Settings saved successfully!");
+    setTimeout(() => {
+      setSettingsSavedMessage("");
+      setShowSettingsModal(false);
+    }, 1200);
+  };
+
+  // Sync playlist with localStorage
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(`echora-playlist-${user.email}`);
       if (saved) setPlaylist(JSON.parse(saved) as Track[]);
     } catch {
       setPlaylist([]);
-    } finally {
-      setPlaylistReady(true);
-    }
+    } flex:
+    setPlaylistReady(true);
   }, [user.email]);
+
   useEffect(() => {
-    if (playlistReady)
+    if (playlistReady) {
       window.localStorage.setItem(
         `echora-playlist-${user.email}`,
-        JSON.stringify(playlist),
+        JSON.stringify(playlist)
       );
+    }
   }, [playlist, playlistReady, user.email]);
+
+  // Sync history with localStorage
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(`echora-history-${user.email}`);
       if (saved) setHistory(JSON.parse(saved) as Track[]);
     } catch {
       setHistory([]);
-    } finally {
-      setHistoryReady(true);
-    }
+    } flex:
+    setHistoryReady(true);
   }, [user.email]);
-  useEffect(() => {
-    if (historyReady)
-      window.localStorage.setItem(
-        `echora-history-${user.email}`,
-        JSON.stringify(history),
-      );
-  }, [history, historyReady, user.email]);
-  useEffect(() => {
-    if (isPlaying)
-      setHistory((items) =>
-        [track, ...items.filter((item) => item.id !== track.id)].slice(0, 12),
-      );
-  }, [isPlaying, track]);
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume / 100;
-  }, [volume]);
+    if (historyReady) {
+      window.localStorage.setItem(
+        `echora-history-${user.email}`,
+        JSON.stringify(history)
+      );
+    }
+  }, [history, historyReady, user.email]);
+
+  useEffect(() => {
+    if (isPlaying && track) {
+      setHistory((items) =>
+        [track, ...items.filter((item) => item.id !== track.id)].slice(0, 15)
+      );
+    }
+  }, [isPlaying, track]);
+
+  // Audio volume sync
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume / 100;
+    }
+  }, [volume, isMuted]);
+
+  // Audio listeners
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
     const updateTime = () => setCurrentTime(audio.currentTime);
     const updateDuration = () =>
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+
     const ended = () => {
-      setExternalTrack(null);
-      setIndex((value) => (value + 1) % tracks.length);
+      if (isRepeat) {
+        audio.currentTime = 0;
+        void audio.play();
+      } else if (isShuffle && queue.length > 1) {
+        const randomIndex = Math.floor(Math.random() * queue.length);
+        setExternalTrack(null);
+        setIndex(randomIndex);
+      } else if (autoplayNext) {
+        setExternalTrack(null);
+        setIndex((value) => (value + 1) % (queue.length || 1));
+      } else {
+        setIsPlaying(false);
+      }
     };
+
     const failed = () => {
       setIsPlaying(false);
-      setError("This track could not be loaded. Please try another track.");
+      setError("This audio track could not be loaded. Please select another track.");
     };
+
     audio.addEventListener("timeupdate", updateTime);
     audio.addEventListener("loadedmetadata", updateDuration);
     audio.addEventListener("ended", ended);
     audio.addEventListener("error", failed);
+
     return () => {
       audio.removeEventListener("timeupdate", updateTime);
       audio.removeEventListener("loadedmetadata", updateDuration);
       audio.removeEventListener("ended", ended);
       audio.removeEventListener("error", failed);
     };
-  }, []);
+  }, [isRepeat, isShuffle, autoplayNext, queue.length]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -191,12 +359,14 @@ export default function MusicPlayer({
     setDuration(0);
     setError("");
     audio.load();
-    if (isPlaying)
+    if (isPlaying) {
       audio.play().catch(() => {
         setIsPlaying(false);
-        setError("Playback was blocked. Press play to try again.");
+        setError("Playback was blocked. Click play to listen.");
       });
+    }
   }, [track.audio]);
+
   const togglePlay = async () => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -206,19 +376,31 @@ export default function MusicPlayer({
         setIsPlaying(true);
         setError("");
       } catch {
-        setError("Playback was blocked. Press play to try again.");
+        setError("Playback was blocked. Click play to resume.");
       }
     } else {
       audio.pause();
       setIsPlaying(false);
     }
   };
+
   const changeTrack = (next: number) => {
     if (!queue.length) return;
     setExternalTrack(null);
     setIndex((next + queue.length) % queue.length);
     setIsPlaying(true);
   };
+
+  const toggleMute = () => {
+    if (isMuted) {
+      setIsMuted(false);
+      setVolume(prevVolume || 50);
+    } else {
+      setPrevVolume(volume);
+      setIsMuted(true);
+    }
+  };
+
   const search = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const term = query.trim();
@@ -227,9 +409,9 @@ export default function MusicPlayer({
     setSearchError("");
     try {
       const response = await fetch(
-        `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=12`,
+        `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=16`
       );
-      if (!response.ok) throw new Error("Search failed");
+      if (!response.ok) throw new Error("Search request failed");
       const data = (await response.json()) as { results: ITunesSong[] };
       const found = data.results
         .filter((song) => song.previewUrl)
@@ -242,32 +424,37 @@ export default function MusicPlayer({
             song.artworkUrl100?.replace("100x100", "600x600") ??
             "/placeholder.jpg",
           audio: song.previewUrl as string,
+          durationSeconds: 30,
         }));
       setResults(found);
-      if (!found.length)
-        setSearchError(
-          "No playable previews found. Try another artist or song.",
-        );
+      if (!found.length) {
+        setSearchError("No playable audio preview found for this query.");
+      }
     } catch {
       setSearchError(
-        "Search is unavailable right now. Check your internet connection and try again.",
+        "Unable to connect to search service. Please try again."
       );
     } finally {
       setIsSearching(false);
     }
   };
+
   const playSearchResult = (result: Track) => {
     setExternalTrack(result);
     setIsPlaying(true);
     setError("");
   };
+
   const addToPlaylist = () => {
-    if (!playlist.some((item) => item.id === track.id))
+    if (!playlist.some((item) => item.id === track.id)) {
       setPlaylist((items) => [...items, track]);
+    }
   };
-  const removeFromPlaylist = (id: number) =>
+
+  const removeFromPlaylist = (id: number) => {
     setPlaylist((items) => items.filter((item) => item.id !== id));
-  const clearHistory = () => setHistory([]);
+  };
+
   const removeFromQueue = (id: number) => {
     const removedIndex = queue.findIndex((item) => item.id === id);
     const nextQueue = queue.filter((item) => item.id !== id);
@@ -275,119 +462,305 @@ export default function MusicPlayer({
     if (!externalTrack && removedIndex === index) {
       setIsPlaying(false);
       setIndex(nextQueue.length ? Math.min(index, nextQueue.length - 1) : 0);
-    } else if (!externalTrack && removedIndex < index)
+    } else if (!externalTrack && removedIndex < index) {
       setIndex((value) => value - 1);
+    }
   };
+
   const seek = (value: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = value;
       setCurrentTime(value);
     }
   };
-  const time = (seconds: number) =>
-    `${Math.floor(seconds / 60)}:${Math.floor(seconds % 60)
-      .toString()
-      .padStart(2, "0")}`;
-  const progress = duration ? (currentTime / duration) * 100 : 0;
+
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds) || seconds < 0) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const navItems = [
+    ["home", "Home Dashboard", Home],
+    ["explore", "Explore Songs", Compass],
+    ["library", "Your Library", Library],
+    ["playlist", "My Playlist", ListMusic],
+  ] as const;
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-[#070708] to-[#090a0b] text-foreground">
-      <aside className={`hidden md:flex md:flex-col shrink-0 border-r border-white/10 bg-[#0f1111] p-4 transition-all duration-200 ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
-        <div className="flex items-center justify-between gap-2 px-3 pt-2">
-          <div className="flex items-center gap-2 text-lg font-black tracking-tight">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#1db954] text-black">
-              <ListMusic className="h-5 w-5" />
+    <div className="flex h-screen w-screen overflow-hidden bg-[#090a0c] text-white antialiased">
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden md:flex md:flex-col shrink-0 border-r border-white/10 bg-[#0d0e12]/95 backdrop-blur-2xl w-64">
+        {/* Sidebar Header */}
+        <div className="flex h-16 items-center px-5 border-b border-white/10">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-[#1db954] to-[#10b981] text-black shadow-lg shadow-[#1db954]/25">
+              <Disc3 className="h-6 w-6 animate-spin-slow" />
             </span>
-            {!sidebarCollapsed && <span className="ml-1">echora</span>}
+            <div className="flex flex-col">
+              <span className="text-lg font-black tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
+                echora
+              </span>
+              <span className="text-[10px] font-semibold text-[#75e8a0] tracking-widest uppercase">
+                Studio HD
+              </span>
+            </div>
           </div>
-          <button
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            aria-label="Toggle sidebar"
-            className="rounded p-1 text-muted-foreground hover:bg-white/5"
-          >
-            {sidebarCollapsed ? '▶' : '◀'}
-          </button>
         </div>
-        <nav className="mt-10 space-y-1.5 text-sm">
-          <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-            Discover
+
+        {/* Navigation Items */}
+        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
+          <p className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-500">
+            Menu
           </p>
-          {(
-            [
-              ["home", "Home", Home],
-              ["explore", "Explore", Compass],
-              ["library", "Your Library", Library],
-              ["playlist", "My Playlist", ListMusic],
-            ] as const
-          ).map(([view, label, Icon]) => (
-            <button
-              key={view}
-              onClick={() => setActiveView(view)}
-              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition w-full ${activeView === view ? "bg-[#1db954] text-black shadow-lg shadow-[#1db954]/15" : "text-muted-foreground hover:bg-white/[0.05] hover:text-white"}`}
-            >
-              <Icon className="h-4 w-4" />
-              {!sidebarCollapsed && <span>{label}</span>}
-            </button>
-          ))}
+          {navItems.map(([view, label, Icon]) => {
+            const isActive = activeView === view;
+            return (
+              <button
+                key={view}
+                onClick={() => setActiveView(view)}
+                className={`group relative flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 ${
+                  isActive
+                    ? "bg-gradient-to-r from-[#1db954] to-[#10b981] text-black font-bold shadow-lg shadow-[#1db954]/20 scale-[1.02]"
+                    : "text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                }`}
+              >
+                <Icon className={`h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-black" : ""}`} />
+                <span className="truncate">{label}</span>
+                {isActive && (
+                  <span className="ml-auto h-2 w-2 rounded-full bg-black" />
+                )}
+              </button>
+            );
+          })}
+
+          <div className="mt-8 rounded-2xl border border-[#1db954]/30 bg-gradient-to-br from-[#1db954]/15 via-black/40 to-transparent p-4 shadow-xl">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#75e8a0]">
+              <Sparkles className="h-4 w-4 text-[#1db954]" /> UNLIMITED AUDIO
+            </div>
+            <p className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
+              Enjoy high-fidelity sound, zero audio ads, and custom visualizer.
+            </p>
+          </div>
         </nav>
-        <div className="mt-8 rounded-2xl border border-[#1db954]/20 bg-[#1db954]/[0.07] p-4">
-          <p className="text-xs font-bold text-[#73e49b]">
-            LISTEN WITHOUT LIMITS
-          </p>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">
-            Discover music, build your queue, and make it yours.
-          </p>
-        </div>
-        <button
-          onClick={onLogout}
-          className="mt-auto flex items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted-foreground transition hover:bg-white/[0.05] hover:text-white"
-        >
-          <LogOut className="h-4 w-4" /> Log out
-        </button>
       </aside>
-      <main className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between gap-3 border-b border-white/10 bg-[#101112]/70 px-5 py-4 backdrop-blur-xl md:px-8">
-          <form onSubmit={search} className="relative w-full max-w-xl">
-            <Search className="pointer-events-none absolute left-4 top-3 h-4 w-4 text-muted-foreground" />
+
+      {/* MOBILE OVERLAY DRAWER */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+          />
+          <div className="relative z-10 flex w-72 flex-col bg-[#0d0e12] border-r border-white/10 p-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2 font-black text-lg">
+                <Disc3 className="h-6 w-6 text-[#1db954] animate-spin-slow" /> echora
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="rounded-lg p-2 text-zinc-400 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+              <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-[#1db954] to-[#10b981] font-black text-black">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-white">{user.name}</p>
+                <p className="truncate text-xs text-[#75e8a0]">{user.email}</p>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowAvatarModal(true);
+                }}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] py-2 text-xs font-bold text-white hover:bg-white/10"
+              >
+                <Camera className="h-3.5 w-3.5 text-[#1db954]" /> Avatar
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowSettingsModal(true);
+                }}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] py-2 text-xs font-bold text-white hover:bg-white/10"
+              >
+                <Settings className="h-3.5 w-3.5 text-[#1db954]" /> Settings
+              </button>
+            </div>
+
+            <nav className="mt-6 space-y-1.5 flex-1">
+              {navItems.map(([view, label, Icon]) => {
+                const isActive = activeView === view;
+                return (
+                  <button
+                    key={view}
+                    onClick={() => {
+                      setActiveView(view);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition ${
+                      isActive
+                        ? "bg-[#1db954] text-black shadow-lg shadow-[#1db954]/20"
+                        : "text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            <button
+              onClick={onLogout}
+              className="mt-auto flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-400"
+            >
+              <LogOut className="h-4 w-4" /> Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN CONTENT CONTAINER */}
+      <div className="flex flex-1 flex-col min-w-0 h-full pb-28 md:pb-0 relative z-0">
+        {/* HEADER TOP BAR */}
+        <header className="relative z-50 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#0d0e12]/95 px-4 sm:px-6 backdrop-blur-2xl">
+          {/* Mobile Hamburger Menu Toggle */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-zinc-300 md:hidden hover:bg-white/10"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          {/* Instant Search Bar */}
+          <form onSubmit={search} className="relative flex-1 max-w-lg">
+            <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search artists, albums, or songs"
-              className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-2.5 pl-10 pr-4 text-sm outline-none transition placeholder:text-muted-foreground focus:border-[#1db954] focus:ring-4 focus:ring-[#1db954]/10"
+              placeholder="Search songs, artists..."
+              className="w-full rounded-full border border-white/10 bg-white/[0.05] py-2 pl-10 pr-9 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-[#1db954] focus:bg-black/60 focus:ring-4 focus:ring-[#1db954]/15"
             />
+            {query && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setResults([]);
+                  setSearchError("");
+                }}
+                className="absolute right-3 top-2.5 text-zinc-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </form>
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right text-sm sm:block">
-              <p className="font-semibold">{user.name}</p>
-              <p className="text-xs text-[#73e49b]">Free listener</p>
-            </div>
-            <div className="hidden h-10 w-10 items-center justify-center rounded-xl bg-[#1db954] font-bold text-black sm:flex">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
+
+          {/* User Profile Badge with Interactive Dropdown Menu */}
+          <div className="relative z-50" ref={profileDropdownRef}>
             <button
-              onClick={onLogout}
-              className="rounded-xl border border-white/10 p-2.5 text-muted-foreground transition hover:border-white/30 hover:text-white"
-              aria-label="Log out"
+              onClick={() => setProfileMenuOpen((prev) => !prev)}
+              className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] p-1.5 pl-3 transition hover:border-[#1db954]/50 hover:bg-white/[0.08]"
             >
-              <LogOut className="h-4 w-4" />
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-bold text-white leading-tight">
+                  {user.name}
+                </p>
+                <p className="text-xs text-[#75e8a0] font-medium">
+                  {user.email}
+                </p>
+              </div>
+
+              {/* Avatar Icon / Image */}
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-[#1db954] to-[#10b981] font-black text-black shadow-md shadow-[#1db954]/20 ring-2 ring-white/10">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#0d0e12] bg-[#1db954]" />
+              </div>
+              <ChevronDown className="h-4 w-4 text-zinc-400 hidden sm:block" />
             </button>
+
+            {/* PROFILE DROPDOWN MENU */}
+            {profileMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 z-[100] w-64 rounded-2xl border border-white/20 bg-[#12141c] p-2 shadow-2xl backdrop-blur-2xl ring-1 ring-white/10 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="p-3 border-b border-white/10">
+                  <p className="text-sm font-extrabold text-white truncate">{user.name}</p>
+                  <p className="text-xs text-zinc-400 truncate">{user.email}</p>
+                  <span className="mt-1.5 inline-block rounded-full bg-[#1db954]/10 border border-[#1db954]/30 px-2 py-0.5 text-[10px] font-bold text-[#75e8a0]">
+                    PRO LISTENER
+                  </span>
+                </div>
+
+                <div className="py-1 space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      setShowAvatarModal(true);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-white/10 hover:text-white transition"
+                  >
+                    <Camera className="h-4 w-4 text-[#1db954]" />
+                    <span>Change Avatar</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      setShowSettingsModal(true);
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-white/10 hover:text-white transition"
+                  >
+                    <Settings className="h-4 w-4 text-[#1db954]" />
+                    <span>Account Settings</span>
+                  </button>
+                </div>
+
+                <div className="pt-1 border-t border-white/10">
+                  <button
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      onLogout();
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-red-400 hover:bg-red-500/10 transition"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </header>
-        {activeView === "explore" ||
-        results.length > 0 ||
-        isSearching ||
-        searchError ? (
-          <section className="border-b border-border bg-[#181818] px-5 py-5 md:px-8">
+
+        {/* SEARCH RESULTS OVERLAY */}
+        {(activeView === "explore" || results.length > 0 || isSearching || searchError) && (
+          <section className="shrink-0 border-b border-white/10 bg-[#12141a]/95 px-4 py-4 sm:px-6 backdrop-blur-xl">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h2 className="font-bold">
+                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <Compass className="h-5 w-5 text-[#1db954]" />
                   {activeView === "explore" && !query
-                    ? "Explore music worldwide"
-                    : `Search results ${query && `for “${query}”`}`}
+                    ? "Discover Global Music"
+                    : `Search Results ${query ? `for "${query}"` : ""}`}
                 </h2>
-                <p className="text-xs text-muted-foreground">
-                  Search any artist, song, or album to play previews
-                </p>
               </div>
               {results.length > 0 && (
                 <button
@@ -395,300 +768,298 @@ export default function MusicPlayer({
                     setResults([]);
                     setSearchError("");
                   }}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white"
+                  className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-semibold text-zinc-400 hover:bg-white/10 hover:text-white"
                 >
-                  <X className="h-4 w-4" /> Close
+                  <X className="h-3.5 w-3.5" /> Close
                 </button>
               )}
             </div>
+
             {isSearching && (
-              <p className="text-sm text-muted-foreground">Finding music…</p>
+              <div className="flex items-center gap-2 py-3 text-xs sm:text-sm text-[#75e8a0]">
+                <Disc3 className="h-4 w-4 animate-spin" /> Searching music library...
+              </div>
             )}
             {searchError && (
-              <p className="text-sm text-red-400">{searchError}</p>
+              <p className="py-2 text-xs sm:text-sm text-red-400">{searchError}</p>
             )}
-            {activeView === "explore" &&
-              !results.length &&
-              !isSearching &&
-              !searchError && (
-                <p className="text-sm text-muted-foreground">
-                  Use the search bar above to discover music from around the
-                  world.
-                </p>
-              )}
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+
+            <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-56 overflow-y-auto pr-1">
               {results.map((result) => (
-                <button
+                <div
                   key={result.id}
                   onClick={() => playSearchResult(result)}
-                  className="flex min-w-0 items-center gap-3 rounded-lg bg-white/[0.02] p-3 text-left hover:bg-white/[0.04] shadow-sm"
+                  className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2 transition hover:border-[#1db954]/50 hover:bg-white/[0.08]"
                 >
-                  <img
-                    src={result.cover}
-                    alt=""
-                    className="h-12 w-12 rounded object-cover"
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">
+                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
+                    <img
+                      src={result.cover}
+                      alt={result.title}
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
+                      <Play className="h-4 w-4 fill-white text-white" />
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs sm:text-sm font-bold text-white group-hover:text-[#75e8a0]">
                       {result.title}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
+                    </p>
+                    <p className="truncate text-[11px] sm:text-xs text-zinc-400">
                       {result.artist}
-                    </span>
-                    <span className="block truncate text-xs text-[#1ed760]">
-                      Play 30 sec preview
-                    </span>
-                  </span>
-                </button>
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           </section>
-        ) : null}
-        {activeView === "playlist" ? (
-          <section className="flex flex-1 flex-col p-6 md:p-8">
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#75e8a0]">
-                  Saved songs
-                </p>
-                <h1 className="text-2xl font-black">My Playlist</h1>
-              </div>
-              <button
-                onClick={() => setActiveView("home")}
-                className="rounded-xl bg-[#1db954] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#58d979]"
-              >
-                Back to Home
-              </button>
-            </div>
-            <div className="grid flex-1 gap-3 overflow-auto sm:grid-cols-2 xl:grid-cols-3">
-              {playlist.length ? (
-                playlist.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3 hover:bg-white/[0.04] shadow-sm"
-                  >
-                    <button
-                      onClick={() => playSearchResult(item)}
-                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                    >
-                      <img
-                        src={item.cover}
-                        alt=""
-                        className="h-12 w-12 rounded-xl object-cover"
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold">
-                          {item.title}
-                        </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {item.artist}
-                        </span>
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => removeFromPlaylist(item.id)}
-                      aria-label={`Remove ${item.title} from playlist`}
-                      className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-red-500/10 hover:text-red-400"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
-                  No saved songs yet. Add the current song to build your playlist.
-                </div>
-              )}
-            </div>
-          </section>
-        ) : activeView === "library" ? (
-          <section className="flex flex-1 items-center justify-center p-8 text-center">
-            <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-10">
-              <Library className="mx-auto mb-4 h-12 w-12 text-[#1db954]" />
-              <h1 className="text-2xl font-black">Your Library</h1>
-              <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-                You have {queue.length}{" "}
-                {queue.length === 1 ? "song" : "songs"} ready. Search for music
-                and play it whenever you want.
-              </p>
-              <button
-                onClick={() => setActiveView("home")}
-                className="mt-6 rounded-xl bg-[#1db954] px-6 py-2.5 text-sm font-bold text-black transition hover:bg-[#58d979]"
-              >
-                Back to Home
-              </button>
-            </div>
-          </section>
-        ) : (
-          <div className="grid flex-1 gap-5 overflow-auto bg-[radial-gradient(circle_at_50%_0%,rgba(29,185,84,0.08),transparent_35%)] p-5 lg:grid-cols-3 lg:p-8">
-            <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#244e36] via-[#163622] to-[#101312] p-6 lg:col-span-1">
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#1db954]/15 blur-2xl" />
-              <p className="relative text-[11px] font-bold tracking-[0.18em] text-[#75e8a0]">
-                FEATURED ALBUM
-              </p>
-              <img
-                src={track.cover}
-                alt={track.album}
-                className="relative mx-auto my-7 aspect-square w-52 rounded-2xl object-cover shadow-2xl shadow-black/50 ring-1 ring-white/20"
-              />
-              <h1 className="relative text-center text-2xl font-black">
-                {track.album}
-              </h1>
-              <p className="relative mt-2 text-center text-sm text-muted-foreground">
-                {track.artist}
-              </p>
-              <p className="relative mt-5 text-center text-xs text-[#75e8a0]">
-                {externalTrack ? "Search result" : `${queue.length} songs`}
-              </p>
-            </section>
-            <section className="min-h-[380px] lg:col-span-1">
-              <VinylVisualizer currentTrack={track} isPlaying={isPlaying} />
-            </section>
-            <section className="rounded-3xl border border-white/10 bg-[#0f1111] p-5 lg:col-span-1">
-              <div className="mb-4 flex items-center justify-between">
+        )}
+
+        {/* DASHBOARD CONTENT BODY */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {activeView === "playlist" ? (
+            /* PLAYLIST VIEW */
+            <section className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-white/10 bg-gradient-to-r from-[#1db954]/20 via-black/40 to-transparent p-5 sm:p-6 backdrop-blur-xl">
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-                    Up next
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#75e8a0]">
+                    Your Collection
+                  </span>
+                  <h1 className="text-2xl sm:text-3xl font-black text-white">My Playlist</h1>
+                  <p className="mt-1 text-xs sm:text-sm text-zinc-400">
+                    {playlist.length} saved {playlist.length === 1 ? "track" : "tracks"}
                   </p>
                 </div>
-                {queue.length > 0 && (
-                  <button
-                    onClick={() => {
-                      setQueue([]);
-                      setIndex(0);
-                      setIsPlaying(false);
-                    }}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground transition hover:bg-red-500/10 hover:text-red-400"
-                  >
-                    <Trash2 className="h-4 w-4" /> Clear
-                  </button>
-                )}
+                <button
+                  onClick={() => setActiveView("home")}
+                  className="rounded-xl bg-[#1db954] px-4 py-2 text-xs sm:text-sm font-bold text-black hover:bg-[#58d979] transition"
+                >
+                  Dashboard
+                </button>
               </div>
-              {queue.length ? (
-                <div className="space-y-2">
-                  {queue.map((item, itemIndex) => (
+
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {playlist.length ? (
+                  playlist.map((item) => (
                     <div
                       key={item.id}
-                      className={`flex items-center gap-2 rounded-xl p-2 transition ${!externalTrack && itemIndex === index ? "bg-[#1db954]/12 ring-1 ring-[#1db954]/50 shadow-md" : "hover:bg-white/[0.03]"}`}
+                      className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 transition hover:border-[#1db954]/40 hover:bg-white/[0.06]"
                     >
                       <button
-                        onClick={() => changeTrack(itemIndex)}
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        onClick={() => playSearchResult(item)}
+                        className="flex flex-1 items-center gap-3 text-left min-w-0"
                       >
                         <img
                           src={item.cover}
                           alt=""
-                          className="h-11 w-11 rounded-lg object-cover"
+                          className="h-11 w-11 rounded-xl object-cover"
                         />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-white group-hover:text-[#75e8a0]">
                             {item.title}
-                          </span>
-                          <span className="block truncate text-xs text-muted-foreground">
+                          </p>
+                          <p className="truncate text-xs text-zinc-400">
                             {item.artist}
-                          </span>
-                        </span>
+                          </p>
+                        </div>
                       </button>
                       <button
-                        onClick={() => removeFromQueue(item.id)}
-                        aria-label={`Remove ${item.title} from songs`}
-                        className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-red-500/10 hover:text-red-400"
+                        onClick={() => removeFromPlaylist(item.id)}
+                        className="rounded-lg p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition"
                       >
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="py-10 text-center text-sm text-muted-foreground">
-                  Your songs list is empty.
-                </p>
-              )}
-            </section>
-          </div>
-        )}
-        <div className="border-t border-white/10 bg-[#0d0e0f] px-5 py-3 md:px-8">
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveView("playlist");
-                setShowPlaylist((visible) => !visible);
-              }}
-              className="text-left text-xs font-semibold text-muted-foreground transition hover:text-white"
-            >
-              <span className="text-[#75e8a0]">My Playlist</span> ·{" "}
-              {playlist.length} {playlist.length === 1 ? "song" : "songs"} saved{" "}
-              <span className="ml-1 text-[10px] text-muted-foreground">
-                {showPlaylist ? "▲ Hide" : "▼ View"}
-              </span>
-            </button>
-            <button
-              onClick={addToPlaylist}
-              disabled={playlist.some((item) => item.id === track.id)}
-              className="flex shrink-0 items-center gap-2 rounded-lg border border-[#1db954]/30 bg-[#1db954]/10 px-3 py-2 text-xs font-bold text-[#75e8a0] transition hover:bg-[#1db954]/20 disabled:cursor-default disabled:opacity-70"
-            >
-              {playlist.some((item) => item.id === track.id) ? (
-                <>
-                  <Check className="h-4 w-4" /> Saved
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" /> Add current song
-                </>
-              )}
-            </button>
-          </div>
-          {showPlaylist && (
-            <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">
-              {playlist.length ? (
-                playlist.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-2 hover:bg-white/[0.04] shadow-sm"
-                  >
-                    <button
-                      onClick={() => playSearchResult(item)}
-                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                    >
-                      <img
-                        src={item.cover}
-                        alt=""
-                        className="h-10 w-10 rounded-lg object-cover"
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold">
-                          {item.title}
-                        </span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {item.artist}
-                        </span>
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => removeFromPlaylist(item.id)}
-                      aria-label={`Remove ${item.title} from playlist`}
-                      className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-red-500/10 hover:text-red-400"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                  ))
+                ) : (
+                  <div className="col-span-full rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center text-zinc-400">
+                    <ListMusic className="mx-auto mb-3 h-10 w-10 text-[#1db954]" />
+                    <p className="text-base font-bold text-white">No saved tracks yet</p>
+                    <p className="mt-1 text-xs sm:text-sm">Add tracks while playing to build your custom playlist.</p>
                   </div>
-                ))
-              ) : (
-                <p className="py-3 text-sm text-muted-foreground">
-                  No saved songs yet. Add the song currently playing to start
-                  your playlist.
+                )}
+              </div>
+            </section>
+          ) : activeView === "library" ? (
+            /* LIBRARY VIEW */
+            <section className="flex h-full items-center justify-center">
+              <div className="w-full max-w-md rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-6 sm:p-8 text-center backdrop-blur-xl">
+                <Library className="mx-auto mb-4 h-12 w-12 text-[#1db954]" />
+                <h1 className="text-xl sm:text-2xl font-black text-white">Your Music Library</h1>
+                <p className="mt-2 text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                  You have {queue.length} ready-to-play tracks in your queue.
                 </p>
-              )}
+                <div className="mt-6 flex justify-center gap-3">
+                  <button
+                    onClick={() => setActiveView("home")}
+                    className="rounded-xl bg-[#1db954] px-6 py-2.5 text-xs sm:text-sm font-bold text-black hover:bg-[#58d979] transition"
+                  >
+                    Go to Home
+                  </button>
+                </div>
+              </div>
+            </section>
+          ) : (
+            /* HOME DASHBOARD VIEW */
+            <div className="space-y-6">
+              {/* FEATURED HERO BANNER */}
+              <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-[#163622] via-[#0e1f14] to-[#0a0c0e] p-5 sm:p-6 lg:p-8 shadow-2xl">
+                <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[#1db954]/20 blur-3xl" />
+                <div className="relative flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left">
+                  <div className="space-y-2.5 max-w-lg">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1db954]/30 bg-[#1db954]/10 px-3 py-1 text-[11px] sm:text-xs font-bold text-[#75e8a0]">
+                      <Sparkles className="h-3.5 w-3.5" /> Featured Track
+                    </span>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white">
+                      {track.title}
+                    </h1>
+                    <p className="text-sm sm:text-base font-semibold text-zinc-300">
+                      {track.artist} — <span className="text-zinc-400 font-normal">{track.album}</span>
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 pt-1">
+                      <button
+                        onClick={togglePlay}
+                        className="flex items-center gap-2 rounded-xl bg-[#1db954] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-black hover:bg-[#58d979] hover:scale-105 transition shadow-lg shadow-[#1db954]/25"
+                      >
+                        {isPlaying ? (
+                          <>
+                            <Pause className="h-4 w-4 fill-black" /> Pause
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 fill-black ml-0.5" /> Listen Now
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={addToPlaylist}
+                        className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.05] px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-white/10 transition"
+                      >
+                        {playlist.some((item) => item.id === track.id) ? (
+                          <>
+                            <Check className="h-4 w-4 text-[#1db954]" /> In Playlist
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4" /> Add to Playlist
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="relative h-32 w-32 sm:h-40 sm:w-40 shrink-0 overflow-hidden rounded-2xl shadow-2xl ring-2 ring-white/15">
+                    <img
+                      src={track.cover}
+                      alt={track.album}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* DASHBOARD GRID: VINYL VISUALIZER & UP NEXT QUEUE */}
+              <div className="grid gap-6 lg:grid-cols-12">
+                {/* Vinyl Turntable Visualizer Deck */}
+                <div className="lg:col-span-7 h-[340px] sm:h-[400px] lg:h-[420px]">
+                  <VinylVisualizer currentTrack={track} isPlaying={isPlaying} />
+                </div>
+
+                {/* Up Next Queue */}
+                <div className="flex flex-col rounded-3xl border border-white/10 bg-[#0d0e12]/90 p-4 sm:p-5 backdrop-blur-xl lg:col-span-5 h-[340px] sm:h-[400px] lg:h-[420px]">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">
+                        Playlist Queue
+                      </span>
+                      <h3 className="text-base sm:text-lg font-black text-white">Up Next</h3>
+                    </div>
+                    {queue.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setQueue([]);
+                          setIndex(0);
+                          setIsPlaying(false);
+                        }}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition"
+                      >
+                        <Trash2 className="h-3 w-3" /> Clear Queue
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+                    {queue.length ? (
+                      queue.map((item, itemIndex) => {
+                        const isCurrent = !externalTrack && itemIndex === index;
+                        return (
+                          <div
+                            key={item.id}
+                            className={`group flex items-center justify-between gap-2.5 rounded-2xl p-2 sm:p-2.5 transition-all duration-200 ${
+                              isCurrent
+                                ? "border border-[#1db954]/50 bg-[#1db954]/15 shadow-md shadow-[#1db954]/10"
+                                : "border border-transparent hover:bg-white/[0.04]"
+                            }`}
+                          >
+                            <button
+                              onClick={() => changeTrack(itemIndex)}
+                              className="flex flex-1 items-center gap-2.5 text-left min-w-0"
+                            >
+                              <span className="w-4 text-center text-xs font-bold text-zinc-500 group-hover:text-white">
+                                {isCurrent && isPlaying ? (
+                                  <span className="text-[#1db954] font-black">▶</span>
+                                ) : (
+                                  itemIndex + 1
+                                )}
+                              </span>
+                              <img
+                                src={item.cover}
+                                alt=""
+                                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-cover"
+                              />
+                              <div className="min-w-0">
+                                <p
+                                  className={`truncate text-xs sm:text-sm font-bold ${
+                                    isCurrent ? "text-[#75e8a0]" : "text-white"
+                                  }`}
+                                >
+                                  {item.title}
+                                </p>
+                                <p className="truncate text-[11px] sm:text-xs text-zinc-400">
+                                  {item.artist}
+                                </p>
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => removeFromQueue(item.id)}
+                              className="rounded-lg p-1.5 text-zinc-500 opacity-80 sm:opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center text-center text-zinc-500">
+                        <Music className="mb-2 h-7 w-7 text-zinc-600" />
+                        <p className="text-xs sm:text-sm font-medium">Queue is empty</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
-        <footer className="border-t border-white/10 bg-[#101112]/95 px-5 py-3 backdrop-blur-xl md:px-8">
+
+        {/* BOTTOM FIXED AUDIO PLAYER BAR */}
+        <footer className="fixed bottom-0 left-0 right-0 z-40 md:relative border-t border-white/10 bg-[#0b0c0f]/95 px-4 sm:px-6 py-2.5 backdrop-blur-2xl">
           <audio ref={audioRef} src={track.audio} preload="metadata" />
-          <div className="mb-3 flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span>{time(currentTime)}</span>
+
+          {/* Progress Seek Bar */}
+          <div className="mb-1.5 flex items-center gap-2.5 text-[11px] font-medium text-zinc-400">
+            <span className="w-8 text-right">{formatTime(currentTime)}</span>
             <input
-              aria-label="Seek through track"
+              aria-label="Seek track"
               type="range"
               min="0"
               max={duration || 0}
@@ -696,132 +1067,319 @@ export default function MusicPlayer({
               onChange={(event) => seek(Number(event.target.value))}
               className="h-1 flex-1 cursor-pointer accent-[#1db954]"
             />
-            <span>{time(duration)}</span>
+            <span className="w-8">{formatTime(duration)}</span>
           </div>
+
           {error && (
-            <p className="mb-2 text-center text-xs text-red-400">{error}</p>
+            <p className="mb-1 text-center text-[11px] text-red-400 font-semibold">{error}</p>
           )}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
+
+          {/* Controls Bar */}
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            {/* Track Cover & Info */}
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3.5 flex-1 sm:w-1/4">
               <img
                 src={track.cover}
                 alt=""
-                className="h-10 w-10 rounded-lg object-cover"
+                className="h-9 w-9 sm:h-11 sm:w-11 shrink-0 rounded-xl object-cover shadow-md ring-1 ring-white/10"
               />
-              <span className="hidden min-w-0 sm:block">
-                <span className="block truncate text-sm font-bold">
+              <div className="min-w-0 max-w-[110px] sm:max-w-none">
+                <p className="truncate text-xs sm:text-sm font-bold text-white">
                   {track.title}
-                </span>
-                <span className="block truncate text-xs text-muted-foreground">
+                </p>
+                <p className="truncate text-[10px] sm:text-xs text-zinc-400">
                   {track.artist}
-                </span>
-              </span>
-            </div>
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
+                </p>
+              </div>
               <button
                 onClick={() => setLiked(!liked)}
-                aria-label="Like track"
-                className={`transition hover:scale-110 ${liked ? "text-[#1ed760]" : "text-muted-foreground hover:text-white"}`}
+                className={`ml-1 transition hover:scale-110 ${
+                  liked ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
+                }`}
               >
-                <Heart
-                  className="h-5 w-5"
-                  fill={liked ? "currentColor" : "none"}
-                />
+                <Heart className="h-4 w-4 sm:h-5 sm:w-5" fill={liked ? "currentColor" : "none"} />
+              </button>
+            </div>
+
+            {/* Playback Controls */}
+            <div className="flex items-center justify-center gap-2 sm:gap-4">
+              <button
+                onClick={() => setIsShuffle(!isShuffle)}
+                title="Shuffle"
+                className={`hidden sm:block transition ${
+                  isShuffle ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Shuffle className="h-4 w-4" />
               </button>
               <button
                 onClick={() => changeTrack(index - 1)}
-                aria-label="Previous track"
-                className="text-muted-foreground transition hover:text-white"
+                className="text-zinc-400 hover:text-white transition"
               >
-                <SkipBack />
+                <SkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <button
                 onClick={togglePlay}
-                aria-label={isPlaying ? "Pause" : "Play"}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1db954] text-black shadow-lg shadow-[#1db954]/20 transition hover:scale-105 hover:bg-[#58d979]"
+                className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#1db954] text-black shadow-lg shadow-[#1db954]/25 transition hover:scale-105 hover:bg-[#58d979]"
               >
                 {isPlaying ? (
-                  <Pause fill="currentColor" />
+                  <Pause className="h-5 w-5 sm:h-6 sm:w-6 fill-black" />
                 ) : (
-                  <Play fill="currentColor" className="ml-0.5" />
+                  <Play className="h-5 w-5 sm:h-6 sm:w-6 fill-black ml-0.5" />
                 )}
               </button>
               <button
                 onClick={() => changeTrack(index + 1)}
-                aria-label="Next track"
-                className="text-muted-foreground transition hover:text-white"
+                className="text-zinc-400 hover:text-white transition"
               >
-                <SkipForward />
+                <SkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+              <button
+                onClick={() => setIsRepeat(!isRepeat)}
+                title="Repeat"
+                className={`hidden sm:block transition ${
+                  isRepeat ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Repeat className="h-4 w-4" />
               </button>
             </div>
-            <label className="hidden items-center gap-2 text-muted-foreground lg:flex">
-              <Volume2 className="h-5 w-5" />
+
+            {/* Volume Control */}
+            <div className="hidden sm:flex items-center justify-end gap-3 w-1/4">
+              <button
+                onClick={toggleMute}
+                className="text-zinc-400 hover:text-white transition"
+              >
+                {isMuted || volume === 0 ? (
+                  <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
+                ) : (
+                  <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
+              </button>
               <input
                 aria-label="Volume"
                 type="range"
                 min="0"
                 max="100"
-                value={volume}
-                onChange={(event) => setVolume(Number(event.target.value))}
-                className="w-20 accent-[#1db954]"
+                value={isMuted ? 0 : volume}
+                onChange={(event) => {
+                  setIsMuted(false);
+                  setVolume(Number(event.target.value));
+                }}
+                className="w-16 sm:w-24 accent-[#1db954]"
               />
-            </label>
+            </div>
           </div>
         </footer>
-      </main>
-      {activeView === "library" && (
-        <aside className="fixed bottom-24 right-4 z-20 w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#141516]/95 p-4 shadow-2xl shadow-black/50 backdrop-blur-xl md:bottom-6 md:right-6">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#75e8a0]">
-                Listening history
-              </p>
-              <p className="mt-1 text-sm font-bold">Recently played</p>
+
+        {/* MOBILE BOTTOM NAVIGATION TAB BAR */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around border-t border-white/10 bg-[#0d0e12]/95 backdrop-blur-2xl md:hidden">
+          {navItems.map(([view, label, Icon]) => {
+            const isActive = activeView === view;
+            return (
+              <button
+                key={view}
+                onClick={() => setActiveView(view)}
+                className={`flex flex-col items-center gap-1 text-[10px] font-extrabold transition ${
+                  isActive ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span>{label.split(" ")[0]}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* CHANGE AVATAR MODAL */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setShowAvatarModal(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md animate-in fade-in"
+          />
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-[#0e1014] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2">
+                <Camera className="h-5 w-5 text-[#1db954]" />
+                <h3 className="text-lg font-black text-white">Choose Your Avatar</h3>
+              </div>
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-muted-foreground">
-              {history.length} songs
-            </span>
-          </div>
-          {history.length ? (
-            <div className="max-h-56 space-y-1 overflow-y-auto">
-              {history.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => playSearchResult(item)}
-                  className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-white/[0.06]"
-                >
-                  <img
-                    src={item.cover}
-                    alt=""
-                    className="h-9 w-9 rounded-lg object-cover"
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">
-                      {item.title}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {item.artist}
-                    </span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="py-4 text-sm leading-5 text-muted-foreground">
-              Play a song and it will appear here. Your history is restored
-              after refresh.
+
+            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-400">
+              Select Preset Avatar
             </p>
-          )}
-        </aside>
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {PRESET_AVATARS.map((preset) => {
+                const isSelected = avatarUrl === preset.url;
+                return (
+                  <button
+                    key={preset.name}
+                    onClick={() => handleSelectAvatar(preset.url)}
+                    className={`group relative aspect-square overflow-hidden rounded-2xl border-2 transition-all ${
+                      isSelected
+                        ? "border-[#1db954] ring-4 ring-[#1db954]/20 scale-105"
+                        : "border-white/10 hover:border-white/40 hover:scale-105"
+                    }`}
+                  >
+                    <img
+                      src={preset.url}
+                      alt={preset.name}
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <Check className="h-6 w-6 text-[#1db954]" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider text-zinc-400">
+              Or Paste Custom Image URL
+            </p>
+            <form onSubmit={handleCustomAvatarSubmit} className="flex gap-2">
+              <div className="relative flex-1">
+                <ImageIcon className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-zinc-500" />
+                <input
+                  value={customUrlInput}
+                  onChange={(e) => setCustomUrlInput(e.target.value)}
+                  placeholder="https://example.com/my-photo.jpg"
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] py-2 pl-9 pr-3 text-xs text-white placeholder:text-zinc-600 outline-none focus:border-[#1db954]"
+                />
+              </div>
+              <button
+                type="submit"
+                className="rounded-xl bg-[#1db954] px-4 py-2 text-xs font-bold text-black hover:bg-[#58d979] transition"
+              >
+                Apply
+              </button>
+            </form>
+          </div>
+        </div>
       )}
-      {activeView === "library" && history.length > 0 && (
-        <button
-          type="button"
-          onClick={clearHistory}
-          className="fixed bottom-[4.5rem] right-6 z-30 rounded-lg border border-red-400/20 bg-[#141516] px-3 py-2 text-xs font-bold text-red-300 shadow-lg shadow-black/30 transition hover:border-red-400/50 hover:bg-red-500/10"
-        >
-          Clear history
-        </button>
+
+      {/* ACCOUNT SETTINGS MODAL */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            onClick={() => setShowSettingsModal(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md animate-in fade-in"
+          />
+          <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-[#0e1014] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="mb-5 flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-[#1db954]" />
+                <h3 className="text-lg font-black text-white">Account & Audio Settings</h3>
+              </div>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Audio Quality
+                </label>
+                <select
+                  value={audioQuality}
+                  onChange={(e) => setAudioQuality(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] p-3 text-xs font-bold text-white outline-none focus:border-[#1db954]"
+                >
+                  <option value="320kbps" className="bg-[#0e1014]">
+                    Ultra HD (320 kbps High Fidelity)
+                  </option>
+                  <option value="256kbps" className="bg-[#0e1014]">
+                    High Quality (256 kbps)
+                  </option>
+                  <option value="128kbps" className="bg-[#0e1014]">
+                    Standard (128 kbps Data Saver)
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">
+                  Equalizer Mode
+                </label>
+                <select
+                  value={eqPreset}
+                  onChange={(e) => setEqPreset(e.target.value)}
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] p-3 text-xs font-bold text-white outline-none focus:border-[#1db954]"
+                >
+                  <option value="Bass Boost" className="bg-[#0e1014]">
+                    Bass Boost
+                  </option>
+                  <option value="Balanced" className="bg-[#0e1014]">
+                    Balanced Studio
+                  </option>
+                  <option value="Vocal Enhancer" className="bg-[#0e1014]">
+                    Vocal Enhancer
+                  </option>
+                  <option value="Acoustic" className="bg-[#0e1014]">
+                    Acoustic & Live
+                  </option>
+                  <option value="Electronic" className="bg-[#0e1014]">
+                    Electronic & Dance
+                  </option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] p-3.5">
+                <div>
+                  <p className="text-xs font-bold text-white">Autoplay Next Track</p>
+                  <p className="text-[11px] text-zinc-400">Play next song when current track ends</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAutoplayNext((prev) => !prev)}
+                  className={`h-6 w-11 rounded-full transition-colors p-0.5 ${
+                    autoplayNext ? "bg-[#1db954]" : "bg-white/20"
+                  }`}
+                >
+                  <div
+                    className={`h-5 w-5 rounded-full bg-black shadow-md transition-transform ${
+                      autoplayNext ? "translate-x-5 bg-black" : "translate-x-0 bg-white"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {settingsSavedMessage && (
+              <p className="mt-4 text-center text-xs font-bold text-[#75e8a0]">
+                {settingsSavedMessage}
+              </p>
+            )}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="rounded-xl border border-white/10 px-4 py-2.5 text-xs font-bold text-zinc-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSettings}
+                className="rounded-xl bg-[#1db954] px-5 py-2.5 text-xs font-extrabold text-black hover:bg-[#58d979] transition shadow-lg shadow-[#1db954]/20"
+              >
+                Save Preferences
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
