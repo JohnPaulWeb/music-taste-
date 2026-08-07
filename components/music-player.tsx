@@ -64,6 +64,19 @@ interface ITunesSong {
   previewUrl?: string;
 }
 
+const DEFAULT_COVER_FALLBACK =
+  "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&h=500&fit=crop";
+
+const EMPTY_TRACK: Track = {
+  id: 0,
+  title: "Select a Song",
+  artist: "No Track Playing",
+  album: "echora Studio",
+  cover: DEFAULT_COVER_FALLBACK,
+  audio: "",
+  durationSeconds: 0,
+};
+
 const defaultTracks: Track[] = [
   {
     id: 1,
@@ -71,7 +84,7 @@ const defaultTracks: Track[] = [
     artist: "Lumina Collective",
     album: "Digital Ethereal",
     cover:
-      "https://images.unsplash.com/photo-1611339555312-e607c4352fd7?w=500&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
     durationSeconds: 372,
   },
@@ -81,7 +94,7 @@ const defaultTracks: Track[] = [
     artist: "Lumina Collective",
     album: "Digital Ethereal",
     cover:
-      "https://images.unsplash.com/photo-1614613535308-eb5fbd8f2c91?w=500&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
     durationSeconds: 423,
   },
@@ -91,7 +104,7 @@ const defaultTracks: Track[] = [
     artist: "Lumina Collective",
     album: "Digital Ethereal",
     cover:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
     durationSeconds: 345,
   },
@@ -101,7 +114,7 @@ const defaultTracks: Track[] = [
     artist: "Lumina Collective",
     album: "Digital Ethereal",
     cover:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&h=500&fit=crop",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop",
     audio: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
     durationSeconds: 310,
   },
