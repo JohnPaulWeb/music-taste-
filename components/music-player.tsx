@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
   Camera,
   Check,
@@ -176,16 +176,22 @@ export default function MusicPlayer({
   // Settings State
   const [audioQuality, setAudioQuality] = useState("320kbps");
   const [eqPreset, setEqPreset] = useState("Bass Boost");
-  const [autoplayNext, setAutoplayNext] = useState(true);
+  const [autoplayNext, setAutoplayNext] = useState(false);
   const [settingsSavedMessage, setSettingsSavedMessage] = useState("");
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Track[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const [suggestions, setSuggestions] = useState<Track[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [externalTrack, setExternalTrack] = useState<Track | null>(null);
 
-  const [queue, setQueue] = useState<Track[]>(defaultTracks);
+  const [queue, setQueue] = useState<Track[]>([]);
   const [playlist, setPlaylist] = useState<Track[]>([]);
   const [playlistReady, setPlaylistReady] = useState(false);
   const [history, setHistory] = useState<Track[]>([]);
@@ -199,7 +205,7 @@ export default function MusicPlayer({
   const audioRef = useRef<HTMLAudioElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
-  const track = externalTrack ?? queue[index] ?? defaultTracks[0];
+  const track = externalTrack ?? queue[index] ?? EMPTY_TRACK;
 
   // Load avatar & settings from localStorage
   useEffect(() => {
@@ -227,9 +233,53 @@ export default function MusicPlayer({
       ) {
         setProfileMenuOpen(false);
       }
+      // Close suggestions if clicking outside the search area
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Debounced autocomplete fetch
+  const fetchSuggestions = useCallback(async (term: string) => {
+    if (!term.trim() || term.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    try {
+      const response = await fetch(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&limit=6`
+      );
+      if (!response.ok) return;
+      const data = (await response.json()) as { results: ITunesSong[] };
+      const found = data.results
+        .filter((song) => song.previewUrl)
+        .slice(0, 6)
+        .map((song) => ({
+          id: song.trackId,
+          title: song.trackName,
+          artist: song.artistName,
+          album: song.collectionName ?? "Single",
+          cover:
+            song.artworkUrl100?.replace("100x100", "300x300") ??
+            "/placeholder.jpg",
+          audio: song.previewUrl as string,
+          durationSeconds: 30,
+        }));
+      setSuggestions(found);
+      setShowSuggestions(found.length > 0);
+      setActiveSuggestion(-1);
+    } catch {
+      // silently fail — suggestions are optional
+    }
   }, []);
 
   // Save Avatar logic
@@ -274,7 +324,7 @@ export default function MusicPlayer({
       if (saved) setPlaylist(JSON.parse(saved) as Track[]);
     } catch {
       setPlaylist([]);
-    } flex:
+    }
     setPlaylistReady(true);
   }, [user.email]);
 
@@ -294,7 +344,7 @@ export default function MusicPlayer({
       if (saved) setHistory(JSON.parse(saved) as Track[]);
     } catch {
       setHistory([]);
-    } flex:
+    }
     setHistoryReady(true);
   }, [user.email]);
 
@@ -308,12 +358,13 @@ export default function MusicPlayer({
   }, [history, historyReady, user.email]);
 
   useEffect(() => {
-    if (isPlaying && track) {
+    if (isPlaying && track && track.id !== 0) {
       setHistory((items) =>
         [track, ...items.filter((item) => item.id !== track.id)].slice(0, 15)
       );
     }
-  }, [isPlaying, track]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, track.id]);
 
   // Audio volume sync
   useEffect(() => {
@@ -339,11 +390,12 @@ export default function MusicPlayer({
         const randomIndex = Math.floor(Math.random() * queue.length);
         setExternalTrack(null);
         setIndex(randomIndex);
-      } else if (autoplayNext) {
+      } else if (autoplayNext && queue.length > 0) {
         setExternalTrack(null);
-        setIndex((value) => (value + 1) % (queue.length || 1));
+        setIndex((value) => (value + 1) % queue.length);
       } else {
         setIsPlaying(false);
+        setExternalTrack(null);
       }
     };
 
@@ -414,10 +466,51 @@ export default function MusicPlayer({
     }
   };
 
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    debounceRef.current = setTimeout(() => {
+      void fetchSuggestions(value);
+    }, 300);
+  };
+
+  const handleSuggestionSelect = (suggestion: Track) => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setActiveSuggestion(-1);
+    playSearchResult(suggestion);
+    setQuery(suggestion.title + " " + suggestion.artist);
+    setResults([suggestion]);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestion((prev) => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestion((prev) => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter" && activeSuggestion >= 0) {
+      e.preventDefault();
+      handleSuggestionSelect(suggestions[activeSuggestion]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setActiveSuggestion(-1);
+    }
+  };
+
   const search = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const term = query.trim();
     if (!term) return;
+    setShowSuggestions(false);
+    setSuggestions([]);
     setIsSearching(true);
     setSearchError("");
     try {
@@ -461,6 +554,12 @@ export default function MusicPlayer({
   const addToPlaylist = () => {
     if (!playlist.some((item) => item.id === track.id)) {
       setPlaylist((items) => [...items, track]);
+    }
+  };
+
+  const addToQueue = (trackToAdd: Track) => {
+    if (!queue.some((item) => item.id === trackToAdd.id)) {
+      setQueue((items) => [...items, trackToAdd]);
     }
   };
 
@@ -664,9 +763,15 @@ export default function MusicPlayer({
           <form onSubmit={search} className="relative flex-1 max-w-lg">
             <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
             <input
+              ref={searchInputRef}
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => handleQueryChange(event.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              onFocus={() => {
+                if (suggestions.length > 0) setShowSuggestions(true);
+              }}
               placeholder="Search songs, artists..."
+              autoComplete="off"
               className="w-full rounded-full border border-white/10 bg-white/[0.05] py-2 pl-10 pr-9 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-[#1db954] focus:bg-black/60 focus:ring-4 focus:ring-[#1db954]/15"
             />
             {query && (
@@ -676,11 +781,63 @@ export default function MusicPlayer({
                   setQuery("");
                   setResults([]);
                   setSearchError("");
+                  setSuggestions([]);
+                  setShowSuggestions(false);
                 }}
                 className="absolute right-3 top-2.5 text-zinc-400 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
+            )}
+
+            {/* AUTOCOMPLETE SUGGESTIONS DROPDOWN */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                ref={suggestionsRef}
+                className="absolute left-0 right-0 top-full mt-2 z-[200] rounded-2xl border border-white/15 bg-[#111318]/95 shadow-2xl backdrop-blur-xl overflow-hidden"
+              >
+                <p className="px-4 pt-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">
+                  Suggestions
+                </p>
+                <ul role="listbox" aria-label="Search suggestions">
+                  {suggestions.map((s, i) => (
+                    <li
+                      key={s.id}
+                      role="option"
+                      aria-selected={i === activeSuggestion}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSuggestionSelect(s);
+                      }}
+                      onMouseEnter={() => setActiveSuggestion(i)}
+                      className={`flex cursor-pointer items-center gap-3 px-4 py-2.5 transition ${
+                        i === activeSuggestion
+                          ? "bg-[#1db954]/20 text-[#75e8a0]"
+                          : "hover:bg-white/[0.06] text-white"
+                      }`}
+                    >
+                      <img
+                        src={s.cover}
+                        alt=""
+                        className="h-8 w-8 shrink-0 rounded-lg object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold">{s.title}</p>
+                        <p className="truncate text-[11px] text-zinc-400">{s.artist}</p>
+                      </div>
+                      <Play className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-white/10 px-4 py-2.5">
+                  <button
+                    type="submit"
+                    className="text-xs font-semibold text-[#75e8a0] hover:underline"
+                  >
+                    Press Enter to see all results for &ldquo;{query}&rdquo;
+                  </button>
+                </div>
+              </div>
             )}
           </form>
 
@@ -801,10 +958,13 @@ export default function MusicPlayer({
               {results.map((result) => (
                 <div
                   key={result.id}
-                  onClick={() => playSearchResult(result)}
-                  className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2 transition hover:border-[#1db954]/50 hover:bg-white/[0.08]"
+                  className="group flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-2 transition hover:border-[#1db954]/50 hover:bg-white/[0.08]"
                 >
-                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
+                  <button
+                    onClick={() => playSearchResult(result)}
+                    className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg"
+                    aria-label={`Play ${result.title}`}
+                  >
                     <img
                       src={result.cover}
                       alt={result.title}
@@ -813,7 +973,7 @@ export default function MusicPlayer({
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
                       <Play className="h-4 w-4 fill-white text-white" />
                     </div>
-                  </div>
+                  </button>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs sm:text-sm font-bold text-white group-hover:text-[#75e8a0]">
                       {result.title}
@@ -822,6 +982,21 @@ export default function MusicPlayer({
                       {result.artist}
                     </p>
                   </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); addToQueue(result); }}
+                    title="Add to queue"
+                    className={`shrink-0 rounded-lg p-1.5 transition ${
+                      queue.some((q) => q.id === result.id)
+                        ? "text-[#1db954]"
+                        : "text-zinc-500 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    {queue.some((q) => q.id === result.id) ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               ))}
             </div>
@@ -962,7 +1137,7 @@ export default function MusicPlayer({
                   </div>
                   <div className="relative h-32 w-32 sm:h-40 sm:w-40 shrink-0 overflow-hidden rounded-2xl shadow-2xl ring-2 ring-white/15">
                     <img
-                      src={track.cover}
+                      src={track.cover || undefined}
                       alt={track.album}
                       className="h-full w-full object-cover"
                     />
@@ -1066,7 +1241,7 @@ export default function MusicPlayer({
 
         {/* BOTTOM FIXED AUDIO PLAYER BAR */}
         <footer className="fixed bottom-0 left-0 right-0 z-40 md:relative border-t border-white/10 bg-[#0b0c0f]/95 px-4 sm:px-6 py-2.5 backdrop-blur-2xl">
-          <audio ref={audioRef} src={track.audio} preload="metadata" />
+          <audio ref={audioRef} src={track.audio || undefined} preload="metadata" />
 
           {/* Progress Seek Bar */}
           <div className="mb-1.5 flex items-center gap-2.5 text-[11px] font-medium text-zinc-400">
@@ -1092,7 +1267,7 @@ export default function MusicPlayer({
             {/* Track Cover & Info */}
             <div className="flex min-w-0 items-center gap-2 sm:gap-3.5 flex-1 sm:w-1/4">
               <img
-                src={track.cover}
+                src={track.cover || undefined}
                 alt=""
                 className="h-9 w-9 sm:h-11 sm:w-11 shrink-0 rounded-xl object-cover shadow-md ring-1 ring-white/10"
               />
