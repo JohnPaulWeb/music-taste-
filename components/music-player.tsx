@@ -192,6 +192,7 @@ export default function MusicPlayer({
   const [externalTrack, setExternalTrack] = useState<Track | null>(null);
 
   const [queue, setQueue] = useState<Track[]>([]);
+  const [queueReady, setQueueReady] = useState(false);
   const [playlist, setPlaylist] = useState<Track[]>([]);
   const [playlistReady, setPlaylistReady] = useState(false);
   const [history, setHistory] = useState<Track[]>([]);
@@ -317,6 +318,35 @@ export default function MusicPlayer({
     }, 1200);
   };
 
+  // Sync queue with localStorage (restore on login, skip for guest)
+  useEffect(() => {
+    if (user.email === "guest@echora.local") {
+      setQueueReady(true);
+      return;
+    }
+    try {
+      const saved = window.localStorage.getItem(`echora-queue-${user.email}`);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { queue: Track[]; index: number };
+        if (parsed.queue?.length) {
+          setQueue(parsed.queue);
+          setIndex(parsed.index ?? 0);
+        }
+      }
+    } catch {
+      setQueue([]);
+    }
+    setQueueReady(true);
+  }, [user.email]);
+
+  useEffect(() => {
+    if (!queueReady || user.email === "guest@echora.local") return;
+    window.localStorage.setItem(
+      `echora-queue-${user.email}`,
+      JSON.stringify({ queue, index })
+    );
+  }, [queue, index, queueReady, user.email]);
+
   // Sync playlist with localStorage
   useEffect(() => {
     try {
@@ -390,9 +420,12 @@ export default function MusicPlayer({
         const randomIndex = Math.floor(Math.random() * queue.length);
         setExternalTrack(null);
         setIndex(randomIndex);
-      } else if (autoplayNext && queue.length > 0) {
+        setIsPlaying(true);
+      } else if (queue.length > 1) {
+        // Always advance to next track when queue has more songs
         setExternalTrack(null);
         setIndex((value) => (value + 1) % queue.length);
+        setIsPlaying(true);
       } else {
         setIsPlaying(false);
         setExternalTrack(null);
@@ -415,7 +448,7 @@ export default function MusicPlayer({
       audio.removeEventListener("ended", ended);
       audio.removeEventListener("error", failed);
     };
-  }, [isRepeat, isShuffle, autoplayNext, queue.length]);
+  }, [isRepeat, isShuffle, queue.length]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -545,11 +578,28 @@ export default function MusicPlayer({
     }
   };
 
+  const pendingPlayRef = useRef<number | null>(null);
+
   const playSearchResult = (result: Track) => {
-    setExternalTrack(result);
-    setIsPlaying(true);
     setError("");
+    setExternalTrack(null);
+    setQueue((prev) => {
+      const alreadyInQueue = prev.some((item) => item.id === result.id);
+      const nextQueue = alreadyInQueue ? prev : [...prev, result];
+      pendingPlayRef.current = nextQueue.findIndex((item) => item.id === result.id);
+      return nextQueue;
+    });
   };
+
+  // When queue updates and there's a pending play request, switch to that index
+  useEffect(() => {
+    if (pendingPlayRef.current !== null && queue.length > 0) {
+      setIndex(pendingPlayRef.current);
+      setIsPlaying(true);
+      pendingPlayRef.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue]);
 
   const addToPlaylist = () => {
     if (!playlist.some((item) => item.id === track.id)) {
