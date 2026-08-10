@@ -126,7 +126,31 @@ export default function Home() {
             emailRedirectTo: getEmailRedirectTo(),
           },
         });
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          if (
+            signUpError.message.toLowerCase().includes("already registered") ||
+            signUpError.message.toLowerCase().includes("already exists") ||
+            signUpError.message.toLowerCase().includes("user already")
+          ) {
+            setValidationErrors({
+              email: "This email is already registered. Please log in instead.",
+            });
+            setMode("login");
+          } else {
+            setError(signUpError.message || "Unable to create account. Please try again.");
+          }
+          return;
+        }
+
+        // Supabase silently succeeds for duplicate emails when email confirmation is on.
+        // Detect this: identities array is empty for an already-registered address.
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          setValidationErrors({
+            email: "This email is already registered. Please log in instead.",
+          });
+          setMode("login");
+          return;
+        }
 
         if (data.session) {
           setAccount({ name, email });
@@ -139,18 +163,26 @@ export default function Home() {
       } else {
         const { data, error: signInError } =
           await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) throw signInError;
+        if (signInError) {
+          setError(signInError.message || "Invalid email or password. Please try again.");
+          return;
+        }
         setAccount({
           name: String(data.user.user_metadata.name ?? email.split("@")[0]),
           email,
         });
       }
     } catch (submissionError) {
-      setError(
+      const msg =
         submissionError instanceof Error
           ? submissionError.message
-          : "Unable to complete your request. Please try again.",
-      );
+          : typeof submissionError === "object" &&
+            submissionError !== null &&
+            "message" in submissionError &&
+            typeof (submissionError as Record<string, unknown>).message === "string"
+          ? (submissionError as Record<string, unknown>).message as string
+          : "Unable to complete your request. Please try again.";
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -168,7 +200,10 @@ export default function Home() {
         email: pendingConfirmationEmail,
         options: { emailRedirectTo: getEmailRedirectTo() },
       });
-      if (resendError) throw resendError;
+      if (resendError) {
+        setError(resendError.message || "Unable to resend the confirmation email.");
+        return;
+      }
       setMessage(
         "A new confirmation email has been sent. Check spam or junk mail too.",
       );
@@ -176,7 +211,7 @@ export default function Home() {
       setError(
         resendFailure instanceof Error
           ? resendFailure.message
-          : "Unable to resend the confirmation email.",
+          : "Unable to resend the confirmation email."
       );
     } finally {
       setIsSubmitting(false);

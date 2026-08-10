@@ -797,7 +797,7 @@ export default function MusicPlayer({
       )}
 
       {/* MAIN CONTENT CONTAINER */}
-      <div className="flex flex-1 flex-col min-w-0 h-full pb-28 md:pb-0 relative z-0">
+      <div className="flex flex-1 flex-col min-w-0 h-full pb-[112px] md:pb-0 relative z-0">
         {/* HEADER TOP BAR */}
         <header className="relative z-50 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#0d0e12]/95 px-4 sm:px-6 backdrop-blur-2xl">
           {/* Mobile Hamburger Menu Toggle */}
@@ -1290,12 +1290,12 @@ export default function MusicPlayer({
         </div>
 
         {/* BOTTOM FIXED AUDIO PLAYER BAR */}
-        <footer className="fixed bottom-0 left-0 right-0 z-40 md:relative border-t border-white/10 bg-[#0b0c0f]/95 px-4 sm:px-6 py-2.5 backdrop-blur-2xl">
+        <footer className="fixed bottom-14 left-0 right-0 z-40 md:bottom-0 md:relative border-t border-white/10 bg-[#0b0c0f]/95 px-3 sm:px-6 py-2 sm:py-2.5 backdrop-blur-2xl">
           <audio ref={audioRef} src={track.audio || undefined} preload="metadata" />
 
           {/* Progress Seek Bar */}
-          <div className="mb-1.5 flex items-center gap-2.5 text-[11px] font-medium text-zinc-400">
-            <span className="w-8 text-right">{formatTime(currentTime)}</span>
+          <div className="mb-1.5 flex items-center gap-2 text-[10px] sm:text-[11px] font-medium text-zinc-400">
+            <span className="w-7 text-right tabular-nums">{formatTime(currentTime)}</span>
             <input
               aria-label="Seek track"
               type="range"
@@ -1305,7 +1305,7 @@ export default function MusicPlayer({
               onChange={(event) => seek(Number(event.target.value))}
               className="h-1 flex-1 cursor-pointer accent-[#1db954]"
             />
-            <span className="w-8">{formatTime(duration)}</span>
+            <span className="w-7 tabular-nums">{formatTime(duration)}</span>
           </div>
 
           {error && (
@@ -1319,10 +1319,10 @@ export default function MusicPlayer({
               <img
                 src={track.cover || undefined}
                 alt=""
-                className="h-9 w-9 sm:h-11 sm:w-11 shrink-0 rounded-xl object-cover shadow-md ring-1 ring-white/10"
+                className="h-8 w-8 sm:h-11 sm:w-11 shrink-0 rounded-lg object-cover shadow-md ring-1 ring-white/10"
               />
-              <div className="min-w-0 max-w-[110px] sm:max-w-none">
-                <p className="truncate text-xs sm:text-sm font-bold text-white">
+              <div className="min-w-0 max-w-[100px] sm:max-w-none">
+                <p className="truncate text-[11px] sm:text-sm font-bold text-white leading-tight">
                   {track.title}
                 </p>
                 <p className="truncate text-[10px] sm:text-xs text-zinc-400">
@@ -1331,7 +1331,7 @@ export default function MusicPlayer({
               </div>
               <button
                 onClick={() => setLiked(!liked)}
-                className={`ml-1 transition hover:scale-110 ${
+                className={`ml-1 shrink-0 transition hover:scale-110 ${
                   liked ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -1344,11 +1344,11 @@ export default function MusicPlayer({
               <button
                 onClick={() => setIsShuffle(!isShuffle)}
                 title="Shuffle"
-                className={`hidden sm:block transition ${
+                className={`transition ${
                   isShuffle ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
                 }`}
               >
-                <Shuffle className="h-4 w-4" />
+                <Shuffle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
               <button
                 onClick={() => changeTrack(index - 1)}
@@ -1358,12 +1358,12 @@ export default function MusicPlayer({
               </button>
               <button
                 onClick={togglePlay}
-                className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#1db954] text-black shadow-lg shadow-[#1db954]/25 transition hover:scale-105 hover:bg-[#58d979]"
+                className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#1db954] text-black shadow-lg shadow-[#1db954]/25 transition hover:scale-105 hover:bg-[#58d979]"
               >
                 {isPlaying ? (
-                  <Pause className="h-5 w-5 sm:h-6 sm:w-6 fill-black" />
+                  <Pause className="h-4 w-4 sm:h-6 sm:w-6 fill-black" />
                 ) : (
-                  <Play className="h-5 w-5 sm:h-6 sm:w-6 fill-black ml-0.5" />
+                  <Play className="h-4 w-4 sm:h-6 sm:w-6 fill-black ml-0.5" />
                 )}
               </button>
               <button
@@ -1375,15 +1375,15 @@ export default function MusicPlayer({
               <button
                 onClick={() => setIsRepeat(!isRepeat)}
                 title="Repeat"
-                className={`hidden sm:block transition ${
+                className={`transition ${
                   isRepeat ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
                 }`}
               >
-                <Repeat className="h-4 w-4" />
+                <Repeat className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
             </div>
 
-            {/* Volume Control */}
+            {/* Volume Control — desktop only */}
             <div className="hidden sm:flex items-center justify-end gap-3 w-1/4">
               <button
                 onClick={toggleMute}
