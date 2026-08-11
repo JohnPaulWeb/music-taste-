@@ -1139,93 +1139,134 @@ export default function MusicPlayer({
             </section>
           ) : (
             /* HOME DASHBOARD VIEW */
-            <div className="space-y-6">
+            <div className="space-y-5">
+
+              {/* GREETING + STATS ROW */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#75e8a0]">Welcome back</p>
+                  <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+                    {user.name} 
+                  </h1>
+                </div>
+                <div className="flex gap-3">
+                  {[
+                    { label: "In Queue", value: queue.length, icon: ListMusic },
+                    { label: "Saved", value: playlist.length, icon: Heart },
+                    { label: "Played", value: history.length, icon: Clock },
+                  ].map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 min-w-[72px]">
+                      <Icon className="h-3.5 w-3.5 text-[#1db954] mb-1" />
+                      <span className="text-lg font-black text-white leading-none">{value}</span>
+                      <span className="text-[10px] font-semibold text-zinc-500 mt-0.5">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* FEATURED HERO BANNER */}
-              <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-[#163622] via-[#0e1f14] to-[#0a0c0e] p-5 sm:p-6 lg:p-8 shadow-2xl">
-                <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[#1db954]/20 blur-3xl" />
-                <div className="relative flex flex-col md:flex-row items-center justify-between gap-5 text-center md:text-left">
-                  <div className="space-y-2.5 max-w-lg">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1db954]/30 bg-[#1db954]/10 px-3 py-1 text-[11px] sm:text-xs font-bold text-[#75e8a0]">
-                      <Sparkles className="h-3.5 w-3.5" /> Featured Track
+              <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
+                {/* Blurred album art background */}
+                <div
+                  className="absolute inset-0 scale-110 blur-2xl opacity-30"
+                  style={{ backgroundImage: `url(${track.cover})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#090a0c]/95 via-[#0d0e12]/80 to-[#090a0c]/60" />
+
+                <div className="relative flex flex-col sm:flex-row items-center gap-5 p-5 sm:p-6 lg:p-8">
+                  {/* Album Art */}
+                  <div className="relative shrink-0 h-28 w-28 sm:h-36 sm:w-36 rounded-2xl overflow-hidden shadow-2xl ring-2 ring-white/20">
+                    <img src={track.cover || undefined} alt={track.album} className="h-full w-full object-cover" />
+                    {isPlaying && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="flex items-end gap-0.5 h-5">
+                          <span className="w-1 bg-[#1db954] rounded-full animate-bar-1" />
+                          <span className="w-1 bg-[#1db954] rounded-full animate-bar-2" />
+                          <span className="w-1 bg-[#1db954] rounded-full animate-bar-3" />
+                          <span className="w-1 bg-[#1db954] rounded-full animate-bar-4" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Track Info & Controls */}
+                  <div className="flex-1 min-w-0 text-center sm:text-left space-y-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#1db954]/30 bg-[#1db954]/10 px-3 py-1 text-[11px] font-bold text-[#75e8a0]">
+                      <Sparkles className="h-3 w-3" />
+                      {isPlaying ? "Now Playing" : "Featured Track"}
                     </span>
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white">
-                      {track.title}
-                    </h1>
-                    <p className="text-sm sm:text-base font-semibold text-zinc-300">
-                      {track.artist} — <span className="text-zinc-400 font-normal">{track.album}</span>
-                    </p>
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 pt-1">
+                    <div>
+                      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight truncate">
+                        {track.title}
+                      </h2>
+                      <p className="mt-1 text-sm font-semibold text-zinc-300 truncate">
+                        {track.artist}
+                        {track.album && track.album !== "echora Studio" && (
+                          <span className="text-zinc-500 font-normal"> — {track.album}</span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                       <button
                         onClick={togglePlay}
                         className="flex items-center gap-2 rounded-xl bg-[#1db954] px-5 py-2.5 text-xs sm:text-sm font-extrabold text-black hover:bg-[#58d979] hover:scale-105 transition shadow-lg shadow-[#1db954]/25"
                       >
                         {isPlaying ? (
-                          <>
-                            <Pause className="h-4 w-4 fill-black" /> Pause
-                          </>
+                          <><Pause className="h-4 w-4 fill-black" /> Pause</>
                         ) : (
-                          <>
-                            <Play className="h-4 w-4 fill-black ml-0.5" /> Listen Now
-                          </>
+                          <><Play className="h-4 w-4 fill-black ml-0.5" /> Play</>
                         )}
                       </button>
                       <button
                         onClick={addToPlaylist}
-                        className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.05] px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-white/10 transition"
+                        className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.06] px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-white/10 transition"
                       >
                         {playlist.some((item) => item.id === track.id) ? (
-                          <>
-                            <Check className="h-4 w-4 text-[#1db954]" /> In Playlist
-                          </>
+                          <><Check className="h-4 w-4 text-[#1db954]" /> Saved</>
                         ) : (
-                          <>
-                            <Plus className="h-4 w-4" /> Add to Playlist
-                          </>
+                          <><Plus className="h-4 w-4" /> Save</>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => addToQueue(track)}
+                        className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/[0.06] px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-white/10 transition"
+                      >
+                        {queue.some((item) => item.id === track.id) ? (
+                          <><Check className="h-4 w-4 text-[#1db954]" /> Queued</>
+                        ) : (
+                          <><ListMusic className="h-4 w-4" /> Queue</>
                         )}
                       </button>
                     </div>
                   </div>
-                  <div className="relative h-32 w-32 sm:h-40 sm:w-40 shrink-0 overflow-hidden rounded-2xl shadow-2xl ring-2 ring-white/15">
-                    <img
-                      src={track.cover || undefined}
-                      alt={track.album}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
                 </div>
               </section>
 
-              {/* DASHBOARD GRID: VINYL VISUALIZER & UP NEXT QUEUE */}
-              <div className="grid gap-6 lg:grid-cols-12">
-                {/* Vinyl Turntable Visualizer Deck */}
-                <div className="lg:col-span-7 h-[340px] sm:h-[400px] lg:h-[420px]">
+              {/* MAIN GRID: VINYL + QUEUE */}
+              <div className="grid gap-5 lg:grid-cols-12">
+                {/* Vinyl Visualizer */}
+                <div className="lg:col-span-7 h-[320px] sm:h-[380px] lg:h-[400px]">
                   <VinylVisualizer currentTrack={track} isPlaying={isPlaying} />
                 </div>
 
                 {/* Up Next Queue */}
-                <div className="flex flex-col rounded-3xl border border-white/10 bg-[#0d0e12]/90 p-4 sm:p-5 backdrop-blur-xl lg:col-span-5 h-[340px] sm:h-[400px] lg:h-[420px]">
+                <div className="flex flex-col rounded-3xl border border-white/10 bg-[#0d0e12]/90 p-4 sm:p-5 backdrop-blur-xl lg:col-span-5 h-[320px] sm:h-[380px] lg:h-[400px]">
                   <div className="mb-3 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">
-                        Playlist Queue
-                      </span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-zinc-500">Playlist Queue</span>
                       <h3 className="text-base sm:text-lg font-black text-white">Up Next</h3>
                     </div>
                     {queue.length > 0 && (
                       <button
-                        onClick={() => {
-                          setQueue([]);
-                          setIndex(0);
-                          setIsPlaying(false);
-                        }}
+                        onClick={() => { setQueue([]); setIndex(0); setIsPlaying(false); }}
                         className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition"
                       >
-                        <Trash2 className="h-3 w-3" /> Clear Queue
+                        <Trash2 className="h-3 w-3" /> Clear
                       </button>
                     )}
                   </div>
 
-                  <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+                  <div className="flex-1 space-y-1.5 overflow-y-auto pr-1">
                     {queue.length ? (
                       queue.map((item, itemIndex) => {
                         const isCurrent = !externalTrack && itemIndex === index;
@@ -1238,38 +1279,24 @@ export default function MusicPlayer({
                                 : "border border-transparent hover:bg-white/[0.04]"
                             }`}
                           >
-                            <button
-                              onClick={() => changeTrack(itemIndex)}
-                              className="flex flex-1 items-center gap-2.5 text-left min-w-0"
-                            >
-                              <span className="w-4 text-center text-xs font-bold text-zinc-500 group-hover:text-white">
-                                {isCurrent && isPlaying ? (
-                                  <span className="text-[#1db954] font-black">▶</span>
-                                ) : (
-                                  itemIndex + 1
-                                )}
+                            <button onClick={() => changeTrack(itemIndex)} className="flex flex-1 items-center gap-2.5 text-left min-w-0">
+                              <span className="w-5 text-center text-xs font-bold text-zinc-500 shrink-0">
+                                {isCurrent && isPlaying
+                                  ? <span className="text-[#1db954]">▶</span>
+                                  : <span className="group-hover:text-white">{itemIndex + 1}</span>
+                                }
                               </span>
-                              <img
-                                src={item.cover}
-                                alt=""
-                                className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-cover"
-                              />
+                              <img src={item.cover} alt="" className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl object-cover shrink-0" />
                               <div className="min-w-0">
-                                <p
-                                  className={`truncate text-xs sm:text-sm font-bold ${
-                                    isCurrent ? "text-[#75e8a0]" : "text-white"
-                                  }`}
-                                >
+                                <p className={`truncate text-xs sm:text-sm font-bold ${isCurrent ? "text-[#75e8a0]" : "text-white"}`}>
                                   {item.title}
                                 </p>
-                                <p className="truncate text-[11px] sm:text-xs text-zinc-400">
-                                  {item.artist}
-                                </p>
+                                <p className="truncate text-[11px] sm:text-xs text-zinc-400">{item.artist}</p>
                               </div>
                             </button>
                             <button
                               onClick={() => removeFromQueue(item.id)}
-                              className="rounded-lg p-1.5 text-zinc-500 opacity-80 sm:opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition"
+                              className="rounded-lg p-1.5 text-zinc-500 opacity-80 sm:opacity-0 group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 transition shrink-0"
                             >
                               <X className="h-4 w-4" />
                             </button>
@@ -1277,14 +1304,50 @@ export default function MusicPlayer({
                         );
                       })
                     ) : (
-                      <div className="flex h-full flex-col items-center justify-center text-center text-zinc-500">
-                        <Music className="mb-2 h-7 w-7 text-zinc-600" />
-                        <p className="text-xs sm:text-sm font-medium">Queue is empty</p>
+                      <div className="flex h-full flex-col items-center justify-center text-center gap-2 text-zinc-500">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                          <Music className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
+                          <p className="text-xs font-bold text-zinc-400">Queue is empty</p>
+                          <p className="text-[11px] text-zinc-600 mt-0.5">Search a song to get started</p>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
+
+              {/* RECENTLY PLAYED */}
+              {history.length > 0 && (
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-[#1db954]" />
+                      <h3 className="text-base font-black text-white">Recently Played</h3>
+                    </div>
+                    <span className="text-xs text-zinc-500">{history.length} tracks</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    {history.slice(0, 6).map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => playSearchResult(item)}
+                        className="group flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-center transition hover:border-[#1db954]/40 hover:bg-white/[0.07]"
+                      >
+                        <div className="relative w-full aspect-square overflow-hidden rounded-xl">
+                          <img src={item.cover} alt="" className="h-full w-full object-cover transition group-hover:scale-105" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
+                            <Play className="h-6 w-6 fill-white text-white" />
+                          </div>
+                        </div>
+                        <div className="w-full min-w-0">
+                          <p className="truncate text-xs font-bold text-white group-hover:text-[#75e8a0]">{item.title}</p>
+                          <p className="truncate text-[10px] text-zinc-500">{item.artist}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </div>
