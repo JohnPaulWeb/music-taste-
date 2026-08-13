@@ -651,29 +651,25 @@ export default function MusicPlayer({
   ] as const;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#090a0c] text-white antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-black text-white antialiased">
       {/* DESKTOP SIDEBAR */}
-      <aside className="hidden md:flex md:flex-col shrink-0 border-r border-white/10 bg-[#0d0e12]/95 backdrop-blur-2xl w-64">
+      <aside className="hidden md:flex md:flex-col shrink-0 bg-black w-64 p-2 gap-2">
         {/* Sidebar Header */}
-        <div className="flex h-16 items-center px-5 border-b border-white/10">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-[#1db954] to-[#10b981] text-black shadow-lg shadow-[#1db954]/25">
-              <Disc3 className="h-6 w-6 animate-spin-slow" />
+        <div className="flex flex-col gap-2 p-4 bg-[#121212] rounded-lg">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#1ed760] text-black">
+              <Disc3 className="h-5 w-5" />
             </span>
             <div className="flex flex-col">
-              <span className="text-lg font-black tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
-                echora
-              </span>
-              <span className="text-[10px] font-semibold text-[#75e8a0] tracking-widest uppercase">
-                Studio HD
-              </span>
+              <span className="text-base font-bold text-white">echora</span>
+              <span className="text-[10px] font-semibold text-[#1ed760] uppercase tracking-wider">Music</span>
             </div>
           </div>
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
-          <p className="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-500">
+        <nav className="flex-1 bg-[#121212] rounded-lg p-2 overflow-y-auto">
+          <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-[#b3b3b3]">
             Menu
           </p>
           {navItems.map(([view, label, Icon]) => {
@@ -682,29 +678,17 @@ export default function MusicPlayer({
               <button
                 key={view}
                 onClick={() => setActiveView(view)}
-                className={`group relative flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 ${
+                className={`group relative flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors ${
                   isActive
-                    ? "bg-gradient-to-r from-[#1db954] to-[#10b981] text-black font-bold shadow-lg shadow-[#1db954]/20 scale-[1.02]"
-                    : "text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                    ? "bg-[#282828] text-white"
+                    : "text-[#b3b3b3] hover:text-white"
                 }`}
               >
-                <Icon className={`h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-black" : ""}`} />
+                <Icon className={`h-6 w-6 shrink-0 ${isActive ? "text-[#1ed760]" : ""}`} />
                 <span className="truncate">{label}</span>
-                {isActive && (
-                  <span className="ml-auto h-2 w-2 rounded-full bg-black" />
-                )}
               </button>
             );
           })}
-
-          <div className="mt-8 rounded-2xl border border-[#1db954]/30 bg-gradient-to-br from-[#1db954]/15 via-black/40 to-transparent p-4 shadow-xl">
-            <div className="flex items-center gap-2 text-xs font-bold text-[#75e8a0]">
-              <Sparkles className="h-4 w-4 text-[#1db954]" /> UNLIMITED AUDIO
-            </div>
-            <p className="mt-1.5 text-xs text-zinc-400 leading-relaxed">
-              Enjoy high-fidelity sound, zero audio ads, and custom visualizer.
-            </p>
-          </div>
         </nav>
       </aside>
 
@@ -797,21 +781,21 @@ export default function MusicPlayer({
       )}
 
       {/* MAIN CONTENT CONTAINER */}
-      <div className="flex flex-1 flex-col min-w-0 h-full pb-[112px] md:pb-0 relative z-0">
+      <div className="flex flex-1 flex-col min-w-0 h-full pb-[112px] md:pb-0 relative z-0 bg-gradient-to-b from-[#1ed760]/10 to-black">
         {/* HEADER TOP BAR */}
-        <header className="relative z-50 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-[#0d0e12]/95 px-4 sm:px-6 backdrop-blur-2xl">
+        <header className="relative z-50 flex h-16 shrink-0 items-center justify-between gap-3 bg-black/40 px-4 sm:px-6 backdrop-blur-xl">
           {/* Mobile Hamburger Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-zinc-300 md:hidden hover:bg-white/10"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/60 text-white md:hidden hover:bg-black/80 hover:scale-105 transition"
             aria-label="Open navigation menu"
           >
             <Menu className="h-5 w-5" />
           </button>
 
           {/* Instant Search Bar */}
-          <form onSubmit={search} className="relative flex-1 max-w-lg">
-            <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+          <form onSubmit={search} className="relative flex-1 max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#b3b3b3]" />
             <input
               ref={searchInputRef}
               value={query}
@@ -820,9 +804,9 @@ export default function MusicPlayer({
               onFocus={() => {
                 if (suggestions.length > 0) setShowSuggestions(true);
               }}
-              placeholder="Search songs, artists..."
+              placeholder="What do you want to listen to?"
               autoComplete="off"
-              className="w-full rounded-full border border-white/10 bg-white/[0.05] py-2 pl-10 pr-9 text-sm text-white placeholder:text-zinc-500 outline-none transition focus:border-[#1db954] focus:bg-black/60 focus:ring-4 focus:ring-[#1db954]/15"
+              className="w-full rounded-full border-0 bg-white/10 py-2 pl-10 pr-9 text-sm text-white placeholder:text-[#b3b3b3] outline-none transition hover:bg-white/[0.12] focus:bg-[#282828] focus:ring-2 focus:ring-white/20"
             />
             {query && (
               <button
@@ -895,27 +879,18 @@ export default function MusicPlayer({
           <div className="relative z-50" ref={profileDropdownRef}>
             <button
               onClick={() => setProfileMenuOpen((prev) => !prev)}
-              className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] p-1.5 pl-3 transition hover:border-[#1db954]/50 hover:bg-white/[0.08]"
+              className="flex items-center gap-2 rounded-full bg-black/60 p-1 pr-2 transition hover:bg-black/80"
             >
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold text-white leading-tight">
-                  {user.name}
-                </p>
-                <p className="text-xs text-[#75e8a0] font-medium">
-                  {user.email}
-                </p>
-              </div>
-
               {/* Avatar Icon / Image */}
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-[#1db954] to-[#10b981] font-black text-black shadow-md shadow-[#1db954]/20 ring-2 ring-white/10">
+              <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1ed760] font-bold text-black">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={user.name} className="h-full w-full object-cover" />
                 ) : (
                   user.name.charAt(0).toUpperCase()
                 )}
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#0d0e12] bg-[#1db954]" />
               </div>
-              <ChevronDown className="h-4 w-4 text-zinc-400 hidden sm:block" />
+              <span className="text-sm font-bold text-white hidden sm:block">{user.name}</span>
+              <ChevronDown className="h-4 w-4 text-[#b3b3b3] hidden sm:block" />
             </button>
 
             {/* PROFILE DROPDOWN MENU */}
@@ -1054,7 +1029,7 @@ export default function MusicPlayer({
         )}
 
         {/* DASHBOARD CONTENT BODY */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#121212] rounded-t-lg mt-2 mx-2">
           {activeView === "playlist" ? (
             /* PLAYLIST VIEW */
             <section className="space-y-6">
@@ -1353,12 +1328,12 @@ export default function MusicPlayer({
         </div>
 
         {/* BOTTOM FIXED AUDIO PLAYER BAR */}
-        <footer className="fixed bottom-14 left-0 right-0 z-40 md:bottom-0 md:relative border-t border-white/10 bg-[#0b0c0f]/95 px-3 sm:px-6 py-2 sm:py-2.5 backdrop-blur-2xl">
+        <footer className="fixed bottom-14 left-0 right-0 z-40 md:bottom-0 md:relative bg-[#181818] border-t border-[#282828] px-3 sm:px-4 py-3 sm:py-3">
           <audio ref={audioRef} src={track.audio || undefined} preload="metadata" />
 
           {/* Progress Seek Bar */}
-          <div className="mb-1.5 flex items-center gap-2 text-[10px] sm:text-[11px] font-medium text-zinc-400">
-            <span className="w-7 text-right tabular-nums">{formatTime(currentTime)}</span>
+          <div className="mb-2 flex items-center gap-2 text-[10px] sm:text-[11px] font-medium text-[#b3b3b3]">
+            <span className="w-10 text-right tabular-nums">{formatTime(currentTime)}</span>
             <input
               aria-label="Seek track"
               type="range"
@@ -1366,9 +1341,12 @@ export default function MusicPlayer({
               max={duration || 0}
               value={currentTime}
               onChange={(event) => seek(Number(event.target.value))}
-              className="h-1 flex-1 cursor-pointer accent-[#1db954]"
+              className="h-1 flex-1 cursor-pointer appearance-none bg-[#4d4d4d] rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-[#1ed760]"
+              style={{
+                background: `linear-gradient(to right, #1ed760 ${(currentTime / (duration || 1)) * 100}%, #4d4d4d ${(currentTime / (duration || 1)) * 100}%)`
+              }}
             />
-            <span className="w-7 tabular-nums">{formatTime(duration)}</span>
+            <span className="w-10 tabular-nums">{formatTime(duration)}</span>
           </div>
 
           {error && (
@@ -1378,84 +1356,86 @@ export default function MusicPlayer({
           {/* Controls Bar */}
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Track Cover & Info */}
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3.5 flex-1 sm:w-1/4">
+            <div className="flex min-w-0 items-center gap-3 flex-1 sm:w-[30%]">
               <img
                 src={track.cover || undefined}
                 alt=""
-                className="h-8 w-8 sm:h-11 sm:w-11 shrink-0 rounded-lg object-cover shadow-md ring-1 ring-white/10"
+                className="h-14 w-14 shrink-0 rounded-md object-cover"
               />
-              <div className="min-w-0 max-w-[100px] sm:max-w-none">
-                <p className="truncate text-[11px] sm:text-sm font-bold text-white leading-tight">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-white leading-tight hover:underline cursor-pointer">
                   {track.title}
                 </p>
-                <p className="truncate text-[10px] sm:text-xs text-zinc-400">
+                <p className="truncate text-xs text-[#b3b3b3] hover:underline hover:text-white cursor-pointer">
                   {track.artist}
                 </p>
               </div>
               <button
                 onClick={() => setLiked(!liked)}
-                className={`ml-1 shrink-0 transition hover:scale-110 ${
-                  liked ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
+                className={`shrink-0 transition hover:scale-110 ${
+                  liked ? "text-[#1ed760]" : "text-[#b3b3b3] hover:text-white"
                 }`}
               >
-                <Heart className="h-4 w-4 sm:h-5 sm:w-5" fill={liked ? "currentColor" : "none"} />
+                <Heart className="h-4 w-4" fill={liked ? "currentColor" : "none"} />
               </button>
             </div>
 
             {/* Playback Controls */}
-            <div className="flex items-center justify-center gap-2 sm:gap-4">
-              <button
-                onClick={() => setIsShuffle(!isShuffle)}
-                title="Shuffle"
-                className={`transition ${
-                  isShuffle ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                <Shuffle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </button>
-              <button
-                onClick={() => changeTrack(index - 1)}
-                className="text-zinc-400 hover:text-white transition"
-              >
-                <SkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-              <button
-                onClick={togglePlay}
-                className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#1db954] text-black shadow-lg shadow-[#1db954]/25 transition hover:scale-105 hover:bg-[#58d979]"
-              >
-                {isPlaying ? (
-                  <Pause className="h-4 w-4 sm:h-6 sm:w-6 fill-black" />
-                ) : (
-                  <Play className="h-4 w-4 sm:h-6 sm:w-6 fill-black ml-0.5" />
-                )}
-              </button>
-              <button
-                onClick={() => changeTrack(index + 1)}
-                className="text-zinc-400 hover:text-white transition"
-              >
-                <SkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-              <button
-                onClick={() => setIsRepeat(!isRepeat)}
-                title="Repeat"
-                className={`transition ${
-                  isRepeat ? "text-[#1db954]" : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                <Repeat className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </button>
+            <div className="flex flex-col items-center gap-2 flex-1">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsShuffle(!isShuffle)}
+                  title="Shuffle"
+                  className={`transition hover:scale-110 ${
+                    isShuffle ? "text-[#1ed760]" : "text-[#b3b3b3] hover:text-white"
+                  }`}
+                >
+                  <Shuffle className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => changeTrack(index - 1)}
+                  className="text-[#b3b3b3] hover:text-white transition hover:scale-110"
+                >
+                  <SkipBack className="h-5 w-5" fill="currentColor" />
+                </button>
+                <button
+                  onClick={togglePlay}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-black transition hover:scale-105 hover:bg-white/90"
+                >
+                  {isPlaying ? (
+                    <Pause className="h-4 w-4 fill-black" />
+                  ) : (
+                    <Play className="h-4 w-4 fill-black ml-0.5" />
+                  )}
+                </button>
+                <button
+                  onClick={() => changeTrack(index + 1)}
+                  className="text-[#b3b3b3] hover:text-white transition hover:scale-110"
+                >
+                  <SkipForward className="h-5 w-5" fill="currentColor" />
+                </button>
+                <button
+                  onClick={() => setIsRepeat(!isRepeat)}
+                  title="Repeat"
+                  className={`transition hover:scale-110 ${
+                    isRepeat ? "text-[#1ed760]" : "text-[#b3b3b3] hover:text-white"
+                  }`}
+                >
+                  <Repeat className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Volume Control — desktop only */}
-            <div className="hidden sm:flex items-center justify-end gap-3 w-1/4">
+            <div className="hidden sm:flex items-center gap-2 w-[30%] justify-end">
               <button
                 onClick={toggleMute}
-                className="text-zinc-400 hover:text-white transition"
+                className="text-[#b3b3b3] hover:text-white transition"
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
+                  <VolumeX className="h-4 w-4" />
                 ) : (
-                  <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Volume2 className="h-4 w-4" />
                 )}
               </button>
               <input
@@ -1468,14 +1448,17 @@ export default function MusicPlayer({
                   setIsMuted(false);
                   setVolume(Number(event.target.value));
                 }}
-                className="w-16 sm:w-24 accent-[#1db954]"
+                className="w-24 h-1 cursor-pointer appearance-none bg-[#4d4d4d] rounded-full [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:cursor-pointer hover:[&::-webkit-slider-thumb]:bg-[#1ed760]"
+                style={{
+                  background: `linear-gradient(to right, #fff ${volume}%, #4d4d4d ${volume}%)`
+                }}
               />
             </div>
           </div>
         </footer>
 
         {/* MOBILE BOTTOM NAVIGATION TAB BAR */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around border-t border-white/10 bg-[#0d0e12]/95 backdrop-blur-2xl md:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-50 flex h-14 items-center justify-around bg-[#000] border-t border-[#282828] md:hidden">
           {navItems.map(([view, label, Icon]) => {
             const isActive = activeView === view;
             return (
