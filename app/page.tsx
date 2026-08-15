@@ -15,6 +15,7 @@ import {
   UserRound,
 } from "lucide-react";
 import MusicPlayer from "@/components/music-player";
+import { formatAuthError } from "@/lib/auth-errors";
 import { getSupabase } from "@/lib/supabase";
 
 type Mode = "login" | "signup";
@@ -48,14 +49,20 @@ export default function Home() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
   useEffect(() => {
-    const supabase = getSupabase();
-    void supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email)
-        setAccount({
-          name: String(user.user_metadata.name ?? user.email.split("@")[0]),
-          email: user.email,
-        });
-    });
+    try {
+      const supabase = getSupabase();
+      void supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email)
+          setAccount({
+            name: String(user.user_metadata.name ?? user.email.split("@")[0]),
+            email: user.email,
+          });
+      });
+    } catch (configErr) {
+      setError(
+        configErr instanceof Error ? configErr.message : "Supabase is not configured correctly."
+      );
+    }
   }, []);
 
   const validateForm = (name: string, email: string, password: string, confirmPassword: string) => {
@@ -127,17 +134,20 @@ export default function Home() {
           },
         });
         if (signUpError) {
+          console.error("Supabase signup error:", signUpError);
+          const errorMessage = formatAuthError(signUpError, "signup");
+
           if (
-            signUpError.message.toLowerCase().includes("already registered") ||
-            signUpError.message.toLowerCase().includes("already exists") ||
-            signUpError.message.toLowerCase().includes("user already")
+            errorMessage.toLowerCase().includes("already registered") ||
+            errorMessage.toLowerCase().includes("already exists") ||
+            errorMessage.toLowerCase().includes("user already")
           ) {
             setValidationErrors({
               email: "This email is already registered. Please log in instead.",
             });
             setMode("login");
           } else {
-            setError(signUpError.message || "Unable to create account. Please try again.");
+            setError(errorMessage);
           }
           return;
         }
@@ -164,7 +174,8 @@ export default function Home() {
         const { data, error: signInError } =
           await supabase.auth.signInWithPassword({ email, password });
         if (signInError) {
-          setError(signInError.message || "Invalid email or password. Please try again.");
+          console.error("Supabase signin error:", signInError);
+          setError(formatAuthError(signInError, "signin"));
           return;
         }
         setAccount({
@@ -172,17 +183,9 @@ export default function Home() {
           email,
         });
       }
+
     } catch (submissionError) {
-      const msg =
-        submissionError instanceof Error
-          ? submissionError.message
-          : typeof submissionError === "object" &&
-            submissionError !== null &&
-            "message" in submissionError &&
-            typeof (submissionError as Record<string, unknown>).message === "string"
-          ? (submissionError as Record<string, unknown>).message as string
-          : "Unable to complete your request. Please try again.";
-      setError(msg);
+      setError(formatAuthError(submissionError, mode === "signup" ? "signup" : "signin"));
     } finally {
       setIsSubmitting(false);
     }
@@ -201,18 +204,14 @@ export default function Home() {
         options: { emailRedirectTo: getEmailRedirectTo() },
       });
       if (resendError) {
-        setError(resendError.message || "Unable to resend the confirmation email.");
+        setError(formatAuthError(resendError, "resend"));
         return;
       }
       setMessage(
         "A new confirmation email has been sent. Check spam or junk mail too.",
       );
     } catch (resendFailure) {
-      setError(
-        resendFailure instanceof Error
-          ? resendFailure.message
-          : "Unable to resend the confirmation email."
-      );
+      setError(formatAuthError(resendFailure, "resend"));
     } finally {
       setIsSubmitting(false);
     }
