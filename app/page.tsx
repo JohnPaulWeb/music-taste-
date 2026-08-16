@@ -217,6 +217,34 @@ export default function Home() {
     }
   };
 
+  const requestPasswordReset = async () => {
+    const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]');
+    const email = emailInput?.value.trim() ?? "";
+
+    if (!isValidEmail(email)) {
+      setValidationErrors({ email: "Enter the email address for your account first." });
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    setIsSubmitting(true);
+    try {
+      const { error: recoveryError } = await getSupabase().auth.resetPasswordForEmail(email, {
+        redirectTo: `${getAuthRedirectUrl()}/auth/callback?type=recovery`,
+      });
+      if (recoveryError) {
+        setError(formatAuthError(recoveryError, "recovery"));
+        return;
+      }
+      setMessage("If an account exists for that email, we sent a password-reset link. Check spam or junk mail too.");
+    } catch (recoveryFailure) {
+      setError(formatAuthError(recoveryFailure, "recovery"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (account)
     return (
       <MusicPlayer
@@ -426,6 +454,17 @@ export default function Home() {
                 className="text-xs font-semibold text-[#1db954] hover:underline"
               >
                 Resend confirmation email to {pendingConfirmationEmail}
+              </button>
+            )}
+
+            {mode === "login" && (
+              <button
+                type="button"
+                onClick={() => void requestPasswordReset()}
+                disabled={isSubmitting}
+                className="block ml-auto text-xs font-semibold text-[#75e8a0] hover:underline disabled:opacity-60"
+              >
+                Forgot password?
               </button>
             )}
 

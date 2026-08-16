@@ -1,4 +1,4 @@
-type AuthAction = "signup" | "signin" | "resend";
+type AuthAction = "signup" | "signin" | "resend" | "recovery" | "updatePassword";
 
 type AuthLikeError = {
   message?: unknown;
@@ -31,6 +31,10 @@ const fallbackForAction = (action: AuthAction): string => {
       return "Invalid email or password. Please try again.";
     case "resend":
       return "Unable to resend the confirmation email.";
+    case "recovery":
+      return "Unable to send a password-reset email. Please try again.";
+    case "updatePassword":
+      return "Unable to update your password. Please request a new reset link and try again.";
   }
 };
 

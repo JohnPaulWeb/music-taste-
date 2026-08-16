@@ -13,6 +13,23 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const supabase = getSupabase();
     let isCancelled = false;
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(
+      window.location.hash.replace(/^#/, "")
+    );
+    const isRecovery =
+      searchParams.get("type") === "recovery" || hashParams.get("type") === "recovery";
+    const successMessage = isRecovery
+      ? "Reset link verified. Redirecting..."
+      : "Email confirmed successfully! Redirecting...";
+    const successDestination = isRecovery ? "/auth/reset-password" : "/";
+
+    const finishSuccess = (delay = 1200) => {
+      if (isCancelled) return;
+      setIsSuccess(true);
+      setMessage(successMessage);
+      setTimeout(() => router.replace(successDestination), delay);
+    };
 
     const verifyAuth = async () => {
       try {
@@ -22,16 +39,9 @@ export default function AuthCallbackPage() {
         } = await supabase.auth.getSession();
 
         if (existingSession && !isCancelled) {
-          setIsSuccess(true);
-          setMessage("Email confirmed successfully! Redirecting...");
-          setTimeout(() => router.replace("/"), 1200);
+          finishSuccess();
           return;
         }
-
-        const searchParams = new URLSearchParams(window.location.search);
-        const hashParams = new URLSearchParams(
-          window.location.hash.replace(/^#/, "")
-        );
 
         // 2. Check for explicit error in search or hash params
         const errorDesc =
@@ -56,9 +66,7 @@ export default function AuthCallbackPage() {
             return;
           }
           if (!isCancelled) {
-            setIsSuccess(true);
-            setMessage("Email confirmed successfully! Redirecting...");
-            setTimeout(() => router.replace("/"), 1200);
+            finishSuccess();
           }
           return;
         }
@@ -87,9 +95,7 @@ export default function AuthCallbackPage() {
             return;
           }
           if (!isCancelled) {
-            setIsSuccess(true);
-            setMessage("Email confirmed successfully! Redirecting...");
-            setTimeout(() => router.replace("/"), 1200);
+            finishSuccess();
           }
           return;
         }
@@ -109,9 +115,7 @@ export default function AuthCallbackPage() {
             return;
           }
           if (!isCancelled) {
-            setIsSuccess(true);
-            setMessage("Email confirmed successfully! Redirecting...");
-            setTimeout(() => router.replace("/"), 1200);
+            finishSuccess();
           }
           return;
         }
@@ -127,9 +131,7 @@ export default function AuthCallbackPage() {
               event === "INITIAL_SESSION") &&
             !isCancelled
           ) {
-            setIsSuccess(true);
-            setMessage("Email confirmed successfully! Redirecting...");
-            setTimeout(() => router.replace("/"), 1000);
+            finishSuccess(1000);
           }
         });
 
@@ -140,9 +142,7 @@ export default function AuthCallbackPage() {
             data: { session },
           } = await supabase.auth.getSession();
           if (session) {
-            setIsSuccess(true);
-            setMessage("Email confirmed successfully! Redirecting...");
-            router.replace("/");
+            finishSuccess(0);
           } else {
             setMessage(
               "No verification code found. If you already verified, try logging in."
