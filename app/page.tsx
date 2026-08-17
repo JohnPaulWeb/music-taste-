@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import type { Provider } from "@supabase/supabase-js";
 import {
   ArrowRight,
   Check,
@@ -18,8 +19,8 @@ import MusicPlayer from "@/components/music-player";
 import { formatAuthError } from "@/lib/auth-errors";
 import { getSupabase } from "@/lib/supabase";
 
-type Mode = "login" | "signup";
-type FormField = "name" | "email" | "password" | "confirmPassword";
+type Mode = "login" | "signup" | "recovery";
+type FormField = "name" | "email" | "recoveryEmail" | "password" | "confirmPassword";
 type ValidationErrors = Partial<Record<FormField, string>>;
 
 interface Account {
@@ -82,7 +83,7 @@ export default function Home() {
       if (password !== confirmPassword) {
         nextErrors.confirmPassword = "Passwords do not match.";
       }
-    } else {
+    } else if (mode === "login") {
       if (!isValidEmail(email)) {
         nextErrors.email = "Enter a valid email address.";
       }
@@ -217,12 +218,32 @@ export default function Home() {
     }
   };
 
-  const requestPasswordReset = async () => {
-    const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]');
-    const email = emailInput?.value.trim() ?? "";
+  const signInWithProvider = async (provider: Provider) => {
+    setError("");
+    setMessage("");
+    setIsSubmitting(true);
+    try {
+      const { error: providerError } = await getSupabase().auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: getEmailRedirectTo() },
+      });
+      if (providerError) {
+        setError(formatAuthError(providerError, "signin"));
+      }
+    } catch (providerFailure) {
+      setError(formatAuthError(providerFailure, "signin"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const requestPasswordReset = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("recoveryEmail") ?? "").trim();
 
     if (!isValidEmail(email)) {
-      setValidationErrors({ email: "Enter the email address for your account first." });
+      setValidationErrors({ recoveryEmail: "Enter the email address for your account first." });
       return;
     }
 
@@ -320,14 +341,70 @@ export default function Home() {
           </div>
 
           <h2 className="text-3xl font-black tracking-tight text-white">
-            {mode === "signup" ? "Get started today." : "Welcome back."}
+            {mode === "signup"
+              ? "Get started today."
+              : mode === "recovery"
+                ? "Reset your password."
+                : "Welcome back."}
           </h2>
           <p className="mt-2 text-sm text-zinc-400">
             {mode === "signup"
               ? "Create your account or join instantly as guest listener."
-              : "Log in to access your queue and playlists."}
+              : mode === "recovery"
+                ? "Enter the email address connected to your account. We’ll send a secure reset link there."
+                : "Log in to access your queue and playlists."}
           </p>
 
+          {mode === "recovery" ? (
+            <form onSubmit={requestPasswordReset} className="mt-6 space-y-4">
+              <label className="block space-y-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Account Email Address</span>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-zinc-500" />
+                  <input
+                    name="recoveryEmail"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="name@example.com"
+                    onChange={handleFieldChange}
+                    aria-invalid={Boolean(validationErrors.recoveryEmail)}
+                    className={`h-12 w-full rounded-xl border pl-12 pr-4 text-sm outline-none transition placeholder:text-zinc-600 ${
+                      validationErrors.recoveryEmail
+                        ? "border-red-500/70 bg-red-500/10 focus:ring-4 focus:ring-red-500/20"
+                        : "border-white/10 bg-white/[0.04] focus:border-[#1db954] focus:ring-4 focus:ring-[#1db954]/15"
+                    }`}
+                  />
+                </div>
+                {validationErrors.recoveryEmail && (
+                  <p className="text-xs text-red-400">{validationErrors.recoveryEmail}</p>
+                )}
+              </label>
+
+              {error && <p role="alert" className="text-xs font-medium text-red-400">{error}</p>}
+              {message && <p role="status" className="text-xs font-medium text-[#1db954]">{message}</p>}
+
+              <button
+                disabled={isSubmitting}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1db954] font-bold text-black shadow-lg shadow-[#1db954]/20 transition hover:scale-[1.02] hover:bg-[#58d979] disabled:opacity-60"
+              >
+                {isSubmitting ? "Sending link..." : "Send reset link"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("login");
+                  setError("");
+                  setMessage("");
+                  setValidationErrors({});
+                }}
+                className="block w-full text-center text-xs font-semibold text-[#75e8a0] hover:underline"
+              >
+                Back to log in
+              </button>
+            </form>
+          ) : (
           <form onSubmit={submit} className="mt-6 space-y-4">
             {mode === "signup" && (
               <label className="block space-y-1.5">
@@ -460,7 +537,12 @@ export default function Home() {
             {mode === "login" && (
               <button
                 type="button"
-                onClick={() => void requestPasswordReset()}
+                onClick={() => {
+                  setMode("recovery");
+                  setError("");
+                  setMessage("");
+                  setValidationErrors({});
+                }}
                 disabled={isSubmitting}
                 className="block ml-auto text-xs font-semibold text-[#75e8a0] hover:underline disabled:opacity-60"
               >
@@ -485,9 +567,38 @@ export default function Home() {
               )}
             </button>
           </form>
+          )}
 
-          <div className="my-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-zinc-600 before:h-px before:flex-1 before:bg-white/10 after:h-px after:flex-1 after:bg-white/10">
+          {mode !== "recovery" && <><div className="my-5 flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-zinc-600 before:h-px before:flex-1 before:bg-white/10 after:h-px after:flex-1 after:bg-white/10">
             Or
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => void signInWithProvider("google")}
+              disabled={isSubmitting}
+              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-bold text-white transition hover:border-[#1db954]/50 hover:bg-white/[0.08] disabled:opacity-60"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                <path fill="#4285F4" d="M21.35 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.25a4.49 4.49 0 0 1-1.95 2.95v2.77h3.17c1.85-1.7 2.88-4.21 2.88-7.73Z" />
+                <path fill="#34A853" d="M12 21.5c2.64 0 4.86-.87 6.48-2.36l-3.17-2.77c-.88.59-2 .94-3.31.94-2.55 0-4.71-1.72-5.48-4.03H3.25v2.86A9.78 9.78 0 0 0 12 21.5Z" />
+                <path fill="#FBBC05" d="M6.52 13.28A5.88 5.88 0 0 1 6.21 12c0-.44.08-.87.22-1.28V7.86H3.25A9.5 9.5 0 0 0 2.5 12c0 1.52.36 2.96.75 4.14l3.27-2.86Z" />
+                <path fill="#EA4335" d="M12 6.69c1.44 0 2.74.5 3.76 1.47l2.82-2.82C16.85 3.73 14.64 2.5 12 2.5a9.78 9.78 0 0 0-8.75 5.36l3.27 2.86C7.29 8.41 9.45 6.69 12 6.69Z" />
+              </svg>
+              Google
+            </button>
+            <button
+              type="button"
+              onClick={() => void signInWithProvider("facebook")}
+              disabled={isSubmitting}
+              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-bold text-white transition hover:border-[#1db954]/50 hover:bg-white/[0.08] disabled:opacity-60"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#1877F2]" fill="currentColor" aria-hidden="true">
+                <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.03 1.79-4.7 4.54-4.7 1.32 0 2.7.24 2.7.24v2.97h-1.52c-1.5 0-1.97.94-1.97 1.9v2.25h3.35l-.54 3.49h-2.81V24C19.61 23.1 24 18.1 24 12.07Z" />
+              </svg>
+              Facebook
+            </button>
           </div>
 
           <button
@@ -521,7 +632,7 @@ export default function Home() {
 
           <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-zinc-500">
             <Check className="h-3.5 w-3.5 text-[#1db954]" /> Instant listening access. No setup required.
-          </p>
+          </p></>}
         </div>
       </section>
     </main>
