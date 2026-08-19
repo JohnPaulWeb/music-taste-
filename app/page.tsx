@@ -278,12 +278,12 @@ export default function Home() {
     );
 
   return (
-    <main className="relative flex min-h-screen overflow-x-hidden bg-[#07080a] text-white lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+    <main className="relative flex min-h-screen overflow-x-hidden bg-[#050505] text-white lg:grid lg:grid-cols-[1.15fr_0.85fr]">
       {/* Background ambient lighting */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(29,185,84,0.15),transparent_40%),radial-gradient(circle_at_20%_80%,rgba(16,185,129,0.12),transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_14%,rgba(29,185,84,0.18),transparent_34%),radial-gradient(circle_at_8%_100%,rgba(16,185,129,0.13),transparent_38%)]" />
 
       {/* Left Branding Showcase */}
-      <section className="relative hidden overflow-hidden border-r border-white/10 bg-gradient-to-br from-[#1db954]/20 via-[#0e2417] to-[#07080a] p-12 lg:flex lg:flex-col lg:justify-between">
+      <section className="relative hidden overflow-hidden border-r border-white/10 bg-gradient-to-br from-[#1db954]/20 via-[#0b1d12] to-[#050505] p-12 lg:flex lg:flex-col lg:justify-between xl:p-16">
         <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-[#1db954]/20 blur-3xl" />
         <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-black/50 blur-3xl" />
         
@@ -305,13 +305,13 @@ export default function Home() {
           <div className="inline-flex items-center gap-2 rounded-full border border-[#1db954]/30 bg-[#1db954]/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-[#75e8a0]">
             <Sparkles className="h-4 w-4" /> Next-Gen Audio Experience
           </div>
-          <h1 className="text-6xl font-black leading-tight tracking-tight">
+          <h1 className="max-w-md text-6xl font-black leading-[0.96] tracking-[-0.055em] xl:text-7xl">
             Feel every
             <br />
             rhythm & beat.
           </h1>
-          <p className="text-lg leading-relaxed text-zinc-300">
-            Discover curated playlists, explore music worldwide, and experience high-fidelity vinyl visualization.
+          <p className="max-w-md text-lg leading-relaxed text-zinc-300">
+            Your soundtrack, refined. Discover new favorites and bring every listening session to life.
           </p>
         </div>
 
@@ -326,8 +326,8 @@ export default function Home() {
       </section>
 
       {/* Right Form Card */}
-      <section className="relative flex min-h-screen items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#0d0e12]/90 p-8 shadow-2xl backdrop-blur-2xl">
+      <section className="relative flex min-h-screen items-center justify-center p-5 sm:p-10">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#101010]/95 p-7 shadow-[0_32px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-9">
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2 text-2xl font-black">
               <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#1db954] text-black">
@@ -340,7 +340,7 @@ export default function Home() {
             </span>
           </div>
 
-          <h2 className="text-3xl font-black tracking-tight text-white">
+          <h2 className="text-[2rem] font-black leading-none tracking-[-0.04em] text-white">
             {mode === "signup"
               ? "Get started today."
               : mode === "recovery"
@@ -386,7 +386,7 @@ export default function Home() {
 
               <button
                 disabled={isSubmitting}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1db954] font-bold text-black shadow-lg shadow-[#1db954]/20 transition hover:scale-[1.02] hover:bg-[#58d979] disabled:opacity-60"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1ed760] font-extrabold text-black shadow-lg shadow-[#1db954]/20 transition hover:scale-[1.02] hover:bg-[#3be477] disabled:opacity-60"
               >
                 {isSubmitting ? "Sending link..." : "Send reset link"}
               </button>
@@ -578,7 +578,7 @@ export default function Home() {
               type="button"
               onClick={() => void signInWithProvider("google")}
               disabled={isSubmitting}
-              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-bold text-white transition hover:border-[#1db954]/50 hover:bg-white/[0.08] disabled:opacity-60"
+              className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/[0.08] disabled:opacity-60"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
                 <path fill="#4285F4" d="M21.35 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.25a4.49 4.49 0 0 1-1.95 2.95v2.77h3.17c1.85-1.7 2.88-4.21 2.88-7.73Z" />
@@ -592,7 +592,7 @@ export default function Home() {
               type="button"
               onClick={() => void signInWithProvider("facebook")}
               disabled={isSubmitting}
-              className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-bold text-white transition hover:border-[#1db954]/50 hover:bg-white/[0.08] disabled:opacity-60"
+              className="flex h-12 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/[0.08] disabled:opacity-60"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#1877F2]" fill="currentColor" aria-hidden="true">
                 <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.03 1.79-4.7 4.54-4.7 1.32 0 2.7.24 2.7.24v2.97h-1.52c-1.5 0-1.97.94-1.97 1.9v2.25h3.35l-.54 3.49h-2.81V24C19.61 23.1 24 18.1 24 12.07Z" />
@@ -609,7 +609,7 @@ export default function Home() {
                 email: "guest@echora.local",
               })
             }
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.03] text-sm font-bold text-white hover:border-[#1db954]/50 hover:bg-[#1db954]/10 transition"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] text-sm font-bold text-white hover:border-white/40 hover:bg-white/[0.08] transition"
           >
             <Headphones className="h-4 w-4 text-[#1db954]" /> Continue as Guest
           </button>
