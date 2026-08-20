@@ -191,6 +191,7 @@ export default function MusicPlayer({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [externalTrack, setExternalTrack] = useState<Track | null>(null);
 
+  // The queue starts empty and is populated only with tracks the listener adds.
   const [queue, setQueue] = useState<Track[]>([]);
   const [queueReady, setQueueReady] = useState(false);
   const [playlist, setPlaylist] = useState<Track[]>([]);
@@ -329,7 +330,11 @@ export default function MusicPlayer({
       if (saved) {
         const parsed = JSON.parse(saved) as { queue: Track[]; index: number };
         if (parsed.queue?.length) {
-          setQueue(parsed.queue);
+          // Remove the old built-in demo songs if they were saved by a prior version.
+          const userQueue = parsed.queue.filter(
+            (item) => !item.audio.includes("soundhelix.com/examples/mp3/")
+          );
+          setQueue(userQueue);
           setIndex(parsed.index ?? 0);
         }
       }
